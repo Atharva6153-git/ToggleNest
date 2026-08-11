@@ -4,7 +4,6 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
->>>>>>> bd45dac (chore: add backend scaffold, Task model, routes/controllers)
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
