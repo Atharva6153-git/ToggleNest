@@ -7,6 +7,12 @@ exports.createProject = async (req, res) => {
     return res.status(201).json(saved);
   } catch (err) {
     console.error('createProject error', err);
+    if (err.name === 'ValidationError') {
+      return res.status(400).json({ message: err.message });
+    }
+    if (err.name === 'CastError') {
+      return res.status(400).json({ message: `Invalid ${err.path}` });
+    }
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -29,6 +35,9 @@ exports.getProjectById = async (req, res) => {
     return res.json(project);
   } catch (err) {
     console.error('getProjectById error', err);
+    if (err.name === 'CastError') {
+      return res.status(400).json({ message: 'Invalid project id' });
+    }
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -44,6 +53,12 @@ exports.updateProject = async (req, res) => {
     return res.json(updated);
   } catch (err) {
     console.error('updateProject error', err);
+    if (err.name === 'ValidationError') {
+      return res.status(400).json({ message: err.message });
+    }
+    if (err.name === 'CastError') {
+      return res.status(400).json({ message: `Invalid ${err.path}` });
+    }
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -56,6 +71,9 @@ exports.deleteProject = async (req, res) => {
     return res.json({ message: 'Project deleted' });
   } catch (err) {
     console.error('deleteProject error', err);
+    if (err.name === 'CastError') {
+      return res.status(400).json({ message: 'Invalid project id' });
+    }
     return res.status(500).json({ message: 'Server error' });
   }
 };
