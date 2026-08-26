@@ -18,9 +18,12 @@ const projectSchema = new Schema(
     },
     deadline: { type: Date },
     members: [{ type: Schema.Types.ObjectId, ref: 'User' }],
-    createdBy: { type: Schema.Types.ObjectId, ref: 'User', index: true },
+    createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true }
 );
+
+// Compound index covering the paginated list query: filter by createdBy, sort by createdAt
+projectSchema.index({ createdBy: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Project', projectSchema);
