@@ -38,8 +38,31 @@ exports.createProject = async (req, res) => {
 
 exports.getProjects = async (req, res) => {
   try {
-    const projects = await Project.find();
-    return res.json(projects);
+    const { page = 1, limit = 20, search } = req.query;
+    const filter = { createdBy: req.user._id };
+
+    if (search) {
+      filter.name = { $regex: search, $options: 'i' };
+    }
+
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
+    const skip = (pageNum - 1) * limitNum;
+
+    const [projects, total] = await Promise.all([
+      Project.find(filter).lean().sort({ createdAt: -1 }).skip(skip).limit(limitNum),
+      Project.countDocuments(filter),
+    ]);
+
+    return res.json({
+      data: projects,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum),
+      },
+    });
   } catch (err) {
     console.error('getProjects error', err);
     return res.status(500).json({ message: 'Server error' });
@@ -49,8 +72,11 @@ exports.getProjects = async (req, res) => {
 exports.getProjectById = async (req, res) => {
   try {
     const { id } = req.params;
-    const project = await Project.findById(id);
+    const project = await Project.findById(id).lean();
     if (!project) return res.status(404).json({ message: 'Project not found' });
+    if (project.createdBy.toString() !== req.user._id) {
+      return res.status(403).json({ message: 'Not authorized to view this project' });
+    }
     return res.json(project);
   } catch (err) {
     console.error('getProjectById error', err);
