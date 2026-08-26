@@ -10,7 +10,12 @@ const projectSchema = new Schema(
       trim: true,
       maxlength: [100, 'Project name cannot exceed 100 characters'],
     },
-    description: { type: String, trim: true, default: '' },
+    description: {
+      type: String,
+      trim: true,
+      default: '',
+      maxlength: [2000, 'Description cannot exceed 2000 characters'],
+    },
     deadline: { type: Date },
     members: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', index: true },
