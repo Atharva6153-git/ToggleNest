@@ -47,3 +47,10 @@ process.on('unhandledRejection', (reason) => {
 app.get('/', (req, res) => {
   res.json({ message: 'Togglenest backend is running' });
 });
+
+// Global error handler — catches any error that escapes route handlers
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ message: 'Server error' });
+});
