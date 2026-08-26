@@ -20,6 +20,7 @@ const UPDATE_FIELDS = ['name', 'description', 'deadline', 'members'];
 exports.createProject = async (req, res) => {
   try {
     const data = pick(req.body, CREATE_FIELDS);
+    data.createdBy = req.user._id;
     const project = new Project(data);
     const saved = await project.save();
     return res.status(201).json(saved);
@@ -63,12 +64,16 @@ exports.getProjectById = async (req, res) => {
 exports.updateProject = async (req, res) => {
   try {
     const { id } = req.params;
+    const project = await Project.findById(id);
+    if (!project) return res.status(404).json({ message: 'Project not found' });
+    if (project.createdBy.toString() !== req.user._id) {
+      return res.status(403).json({ message: 'Not authorized to update this project' });
+    }
     const data = pick(req.body, UPDATE_FIELDS);
     const updated = await Project.findByIdAndUpdate(id, data, {
       new: true,
       runValidators: true,
     });
-    if (!updated) return res.status(404).json({ message: 'Project not found' });
     return res.json(updated);
   } catch (err) {
     console.error('updateProject error', err);
@@ -85,8 +90,12 @@ exports.updateProject = async (req, res) => {
 exports.deleteProject = async (req, res) => {
   try {
     const { id } = req.params;
-    const deleted = await Project.findByIdAndDelete(id);
-    if (!deleted) return res.status(404).json({ message: 'Project not found' });
+    const project = await Project.findById(id);
+    if (!project) return res.status(404).json({ message: 'Project not found' });
+    if (project.createdBy.toString() !== req.user._id) {
+      return res.status(403).json({ message: 'Not authorized to delete this project' });
+    }
+    await Project.findByIdAndDelete(id);
     return res.json({ message: 'Project deleted' });
   } catch (err) {
     console.error('deleteProject error', err);
