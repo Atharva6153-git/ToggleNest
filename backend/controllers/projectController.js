@@ -1,8 +1,26 @@
 const Project = require('../models/Project');
 
+/**
+ * Pick only allowed keys from an object.
+ * Prevents mass-assignment of unintended fields.
+ */
+function pick(obj, allowedKeys) {
+  const result = {};
+  for (const key of allowedKeys) {
+    if (obj[key] !== undefined) {
+      result[key] = obj[key];
+    }
+  }
+  return result;
+}
+
+const CREATE_FIELDS = ['name', 'description', 'deadline'];
+const UPDATE_FIELDS = ['name', 'description', 'deadline', 'members'];
+
 exports.createProject = async (req, res) => {
   try {
-    const project = new Project(req.body);
+    const data = pick(req.body, CREATE_FIELDS);
+    const project = new Project(data);
     const saved = await project.save();
     return res.status(201).json(saved);
   } catch (err) {
@@ -45,7 +63,8 @@ exports.getProjectById = async (req, res) => {
 exports.updateProject = async (req, res) => {
   try {
     const { id } = req.params;
-    const updated = await Project.findByIdAndUpdate(id, req.body, {
+    const data = pick(req.body, UPDATE_FIELDS);
+    const updated = await Project.findByIdAndUpdate(id, data, {
       new: true,
       runValidators: true,
     });
