@@ -4,11 +4,16 @@ const { Schema } = mongoose;
 
 const projectSchema = new Schema(
   {
-    name: { type: String, required: true, trim: true },
-    description: { type: String, default: '' },
+    name: {
+      type: String,
+      required: [true, 'Project name is required'],
+      trim: true,
+      maxlength: [100, 'Project name cannot exceed 100 characters'],
+    },
+    description: { type: String, trim: true, default: '' },
     deadline: { type: Date },
     members: [{ type: Schema.Types.ObjectId, ref: 'User' }],
-    createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
+    createdBy: { type: Schema.Types.ObjectId, ref: 'User', index: true },
   },
   { timestamps: true }
 );
