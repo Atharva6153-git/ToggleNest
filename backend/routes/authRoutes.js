@@ -11,25 +11,21 @@ router.get("/test", (req, res) => {
   res.send("Auth route is working!");
 });
 
-
 // REGISTER
-router.post("/register", async (req, res) => {
+router.post("/register", async (req, res, next) => {
   try {
     const { name, email, password, role } = req.body;
 
-    // Check if user already exists
     const existingUser = await User.findOne({ email });
 
     if (existingUser) {
-      return res.status(400).json({
-        message: "User already exists",
-      });
+      const error = new Error("User already exists");
+      error.statusCode = 400;
+      return next(error);
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user
     const user = new User({
       name,
       email,
@@ -39,41 +35,36 @@ router.post("/register", async (req, res) => {
 
     await user.save();
 
-    res.status(201).json({
-      message: "User registered successfully",
+    return res.status(201).json({
+      success: true,
+      data: { message: "User registered successfully" },
     });
   } catch (error) {
-    res.status(500).json({
-      message: "Registration failed",
-      error: error.message,
-    });
+    return next(error);
   }
 });
 
 // LOGIN
-router.post("/login", async (req, res) => {
+router.post("/login", async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    // Find user
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res.status(400).json({
-        message: "Invalid email or password",
-      });
+      const error = new Error("Invalid email or password");
+      error.statusCode = 400;
+      return next(error);
     }
 
-    // Check password
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
-      return res.status(400).json({
-        message: "Invalid email or password",
-      });
+      const error = new Error("Invalid email or password");
+      error.statusCode = 400;
+      return next(error);
     }
 
-    // Create JWT token
     const token = jwt.sign(
       {
         userId: user._id,
@@ -85,44 +76,44 @@ router.post("/login", async (req, res) => {
       }
     );
 
-    res.json({
-      message: "Login successful",
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
+    return res.json({
+      success: true,
+      data: {
+        message: "Login successful",
+        token,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
       },
     });
   } catch (error) {
-    res.status(500).json({
-      message: "Login failed",
-      error: error.message,
-    });
+    return next(error);
   }
 });
 
 // PROTECTED PROFILE ROUTE
-router.get("/profile", protect, async (req, res) => {
+router.get("/profile", protect, async (req, res, next) => {
   try {
     const user = await User.findById(req.user.userId).select("-password");
 
     if (!user) {
-      return res.status(404).json({
-        message: "User not found",
-      });
+      const error = new Error("User not found");
+      error.statusCode = 404;
+      return next(error);
     }
 
-    res.json({
-      message: "You accessed a protected route!",
-      user,
+    return res.json({
+      success: true,
+      data: {
+        message: "You accessed a protected route!",
+        user,
+      },
     });
   } catch (error) {
-    res.status(500).json({
-      message: "Something went wrong",
-      error: error.message,
-    });
+    return next(error);
   }
 });
 
