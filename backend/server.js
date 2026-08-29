@@ -8,6 +8,10 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+// Auth routes
+const authRoutes = require('./routes/authRoutes');
+app.use('/api/auth', authRoutes);
+
 // Task routes
 const taskRoutes = require('./routes/taskRoutes');
 app.use('/api/tasks', taskRoutes);
@@ -38,12 +42,4 @@ mongoose.connect(MONGO_URI)
 
 mongoose.connection.on('error', (err) => {
   console.error('MongoDB connection error:', err);
-});
-
-process.on('unhandledRejection', (reason) => {
-  console.error('Unhandled Rejection:', reason);
-});
-
-app.get('/', (req, res) => {
-  res.json({ message: 'Togglenest backend is running' });
 });
