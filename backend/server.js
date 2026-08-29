@@ -20,6 +20,10 @@ app.use('/api/tasks', taskRoutes);
 const projectRoutes = require('./routes/projectRoutes');
 app.use('/api/projects', projectRoutes);
 
+// Activity log routes
+const activityLogRoutes = require('./routes/activityLogRoutes');
+app.use('/api/activity-logs', activityLogRoutes);
+
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI;
 
