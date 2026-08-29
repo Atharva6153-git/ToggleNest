@@ -1,4 +1,5 @@
 const Task = require('../models/Task');
+const ActivityLog = require('../models/ActivityLog');
 
 exports.createTask = async (req, res) => {
   try {
@@ -19,7 +20,7 @@ exports.getTasks = async (req, res) => {
     const { project } = req.query;
     const filter = {};
     if (project) filter.project = project;
-    const tasks = await Task.find(filter);
+    const tasks = await Task.find(filter).populate('assignedTo', 'name email');
     return res.json(tasks);
   } catch (err) {
     console.error('getTasks error', err);
@@ -30,7 +31,7 @@ exports.getTasks = async (req, res) => {
 exports.getTaskById = async (req, res) => {
   try {
     const { id } = req.params;
-    const task = await Task.findById(id);
+    const task = await Task.findById(id).populate('assignedTo', 'name email');
     if (!task) return res.status(404).json({ message: 'Task not found' });
     return res.json(task);
   } catch (err) {
@@ -86,6 +87,17 @@ exports.updateTaskStatus = async (req, res) => {
     );
 
     if (!updated) return res.status(404).json({ message: 'Task not found' });
+
+    const actorId = req.user?.userId || req.user?._id;
+    if (actorId) {
+      await ActivityLog.create({
+        task: id,
+        action: `Status changed to ${status}`,
+        performedBy: actorId,
+        timestamp: new Date(),
+      });
+    }
+
     return res.json(updated);
   } catch (err) {
     console.error('updateTaskStatus error', err);
