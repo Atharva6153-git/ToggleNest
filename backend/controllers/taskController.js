@@ -14,9 +14,17 @@ exports.createTask = async (req, res, next) => {
 
 exports.getTasks = async (req, res, next) => {
   try {
-    const { project, page = 1, limit = 10 } = req.query;
+    const { project, page = 1, limit = 10, search, priority, status, assignedTo } = req.query;
     const filter = {};
+
     if (project) filter.project = project;
+    if (priority) filter.priority = priority;
+    if (status) filter.status = status;
+    if (assignedTo) filter.assignedTo = assignedTo;
+
+    if (search) {
+      filter.title = { $regex: search, $options: 'i' };
+    }
 
     const pageNumber = Math.max(1, Number(page) || 1);
     const limitNumber = Math.max(1, Number(limit) || 10);

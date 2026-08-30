@@ -33,12 +33,17 @@ exports.getDashboardSummary = async (req, res, next) => {
       }
     });
 
+    const totalTasks = tasks.length;
+    const doneTasks = statusCounts['Done'] || 0;
+    const completionPercentage = totalTasks === 0 ? 0 : Number(((doneTasks / totalTasks) * 100).toFixed(2));
+
     return res.json({
       success: true,
       data: {
-        totalTasks: tasks.length,
+        totalTasks,
         tasksByStatus: statusCounts,
         tasksByPriority: priorityCounts,
+        completionPercentage,
       },
     });
   } catch (err) {
