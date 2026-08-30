@@ -1,5 +1,6 @@
 # ToggleNest
 
+<<<<<<< HEAD
 ToggleNest is a task and project management application built with the MERN stack. It helps teams manage project work, track task status, assign team members, review activity history, and view dashboard summaries.
 
 ## Project Overview
@@ -396,3 +397,19 @@ http://localhost:5000
 - All protected routes require a valid JWT token in the `Authorization` header.
 - Most route validations enforce task field rules such as required title and valid status/priority values.
 - The API uses pagination for task lists and basic rate limiting for abuse protection.
+=======
+ToggleNest is a MERN stack project management application for tracking tasks, projects, and team activity. This repository contains the full-stack app with a React frontend and Express/MongoDB backend.
+
+## Backend API
+
+For backend setup and API documentation, see the backend README:
+
+- [backend/README.md](backend/README.md)
+
+## Tech Stack
+
+- MongoDB
+- Express.js
+- React
+- Node.js
+>>>>>>> 35f2c9224451299b908b30e3c718dc5aa73e9fd9
