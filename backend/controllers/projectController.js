@@ -1,42 +1,19 @@
 const Project = require('../models/Project');
 
-/**
- * Pick only allowed keys from an object.
- * Prevents mass-assignment of unintended fields.
- */
-function pick(obj, allowedKeys) {
-  const result = {};
-  for (const key of allowedKeys) {
-    if (obj[key] !== undefined) {
-      result[key] = obj[key];
-    }
-  }
-  return result;
-}
-
-const CREATE_FIELDS = ['name', 'description', 'deadline'];
-const UPDATE_FIELDS = ['name', 'description', 'deadline', 'members'];
-
-exports.createProject = async (req, res) => {
+exports.createProject = async (req, res, next) => {
   try {
     const data = pick(req.body, CREATE_FIELDS);
     data.createdBy = req.user._id;
     const project = new Project(data);
     const saved = await project.save();
-    return res.status(201).json(saved);
+    return res.status(201).json({ success: true, data: saved });
   } catch (err) {
     console.error('createProject error', err);
-    if (err.name === 'ValidationError') {
-      return res.status(400).json({ message: err.message });
-    }
-    if (err.name === 'CastError') {
-      return res.status(400).json({ message: `Invalid ${err.path}` });
-    }
-    return res.status(500).json({ message: 'Server error' });
+    return next(err);
   }
 };
 
-exports.getProjects = async (req, res) => {
+exports.getProjects = async (req, res, next) => {
   try {
     const { page = 1, limit = 20, search } = req.query;
     const filter = { createdBy: req.user._id };
@@ -55,6 +32,7 @@ exports.getProjects = async (req, res) => {
     ]);
 
     return res.json({
+      success: true,
       data: projects,
       pagination: {
         page: pageNum,
@@ -65,29 +43,32 @@ exports.getProjects = async (req, res) => {
     });
   } catch (err) {
     console.error('getProjects error', err);
-    return res.status(500).json({ message: 'Server error' });
+    return next(err);
   }
 };
 
-exports.getProjectById = async (req, res) => {
+exports.getProjectById = async (req, res, next) => {
   try {
     const { id } = req.params;
     const project = await Project.findById(id).lean();
-    if (!project) return res.status(404).json({ message: 'Project not found' });
-    if (project.createdBy.toString() !== req.user._id) {
-      return res.status(403).json({ message: 'Not authorized to view this project' });
+    if (!project) {
+      const error = new Error('Project not found');
+      error.statusCode = 404;
+      return next(error);
     }
-    return res.json(project);
+    if (project.createdBy.toString() !== req.user._id) {
+      const error = new Error('Not authorized to view this project');
+      error.statusCode = 403;
+      return next(error);
+    }
+    return res.json({ success: true, data: project });
   } catch (err) {
     console.error('getProjectById error', err);
-    if (err.name === 'CastError') {
-      return res.status(400).json({ message: 'Invalid project id' });
-    }
-    return res.status(500).json({ message: 'Server error' });
+    return next(err);
   }
 };
 
-exports.updateProject = async (req, res) => {
+exports.updateProject = async (req, res, next) => {
   try {
     const { id } = req.params;
     const project = await Project.findById(id);
@@ -100,34 +81,36 @@ exports.updateProject = async (req, res) => {
       new: true,
       runValidators: true,
     });
-    return res.json(updated);
+    if (!updated) {
+      const error = new Error('Project not found');
+      error.statusCode = 404;
+      return next(error);
+    }
+    return res.json({ success: true, data: updated });
   } catch (err) {
     console.error('updateProject error', err);
-    if (err.name === 'ValidationError') {
-      return res.status(400).json({ message: err.message });
-    }
-    if (err.name === 'CastError') {
-      return res.status(400).json({ message: `Invalid ${err.path}` });
-    }
-    return res.status(500).json({ message: 'Server error' });
+    return next(err);
   }
 };
 
-exports.deleteProject = async (req, res) => {
+exports.deleteProject = async (req, res, next) => {
   try {
     const { id } = req.params;
     const project = await Project.findById(id);
-    if (!project) return res.status(404).json({ message: 'Project not found' });
+    if (!project) {
+      const error = new Error('Project not found');
+      error.statusCode = 404;
+      return next(error);
+    }
     if (project.createdBy.toString() !== req.user._id) {
-      return res.status(403).json({ message: 'Not authorized to delete this project' });
+      const error = new Error('Not authorized to delete this project');
+      error.statusCode = 403;
+      return next(error);
     }
     await Project.findByIdAndDelete(id);
-    return res.json({ message: 'Project deleted' });
+    return res.json({ success: true, data: { message: 'Project deleted' } });
   } catch (err) {
     console.error('deleteProject error', err);
-    if (err.name === 'CastError') {
-      return res.status(400).json({ message: 'Invalid project id' });
-    }
-    return res.status(500).json({ message: 'Server error' });
+    return next(err);
   }
 };
