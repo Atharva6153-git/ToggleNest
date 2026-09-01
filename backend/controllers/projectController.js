@@ -2,7 +2,9 @@ const Project = require('../models/Project');
 
 exports.createProject = async (req, res, next) => {
   try {
-    const project = new Project(req.body);
+    const data = pick(req.body, CREATE_FIELDS);
+    data.createdBy = req.user._id;
+    const project = new Project(data);
     const saved = await project.save();
     return res.status(201).json({ success: true, data: saved });
   } catch (err) {
@@ -13,8 +15,32 @@ exports.createProject = async (req, res, next) => {
 
 exports.getProjects = async (req, res, next) => {
   try {
-    const projects = await Project.find();
-    return res.json({ success: true, data: projects });
+    const { page = 1, limit = 20, search } = req.query;
+    const filter = { createdBy: req.user._id };
+
+    if (search) {
+      filter.name = { $regex: search, $options: 'i' };
+    }
+
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
+    const skip = (pageNum - 1) * limitNum;
+
+    const [projects, total] = await Promise.all([
+      Project.find(filter).lean().sort({ createdAt: -1 }).skip(skip).limit(limitNum),
+      Project.countDocuments(filter),
+    ]);
+
+    return res.json({
+      success: true,
+      data: projects,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum),
+      },
+    });
   } catch (err) {
     console.error('getProjects error', err);
     return next(err);
@@ -24,10 +50,15 @@ exports.getProjects = async (req, res, next) => {
 exports.getProjectById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const project = await Project.findById(id);
+    const project = await Project.findById(id).lean();
     if (!project) {
       const error = new Error('Project not found');
       error.statusCode = 404;
+      return next(error);
+    }
+    if (project.createdBy.toString() !== req.user._id) {
+      const error = new Error('Not authorized to view this project');
+      error.statusCode = 403;
       return next(error);
     }
     return res.json({ success: true, data: project });
@@ -40,7 +71,13 @@ exports.getProjectById = async (req, res, next) => {
 exports.updateProject = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const updated = await Project.findByIdAndUpdate(id, req.body, {
+    const project = await Project.findById(id);
+    if (!project) return res.status(404).json({ message: 'Project not found' });
+    if (project.createdBy.toString() !== req.user._id) {
+      return res.status(403).json({ message: 'Not authorized to update this project' });
+    }
+    const data = pick(req.body, UPDATE_FIELDS);
+    const updated = await Project.findByIdAndUpdate(id, data, {
       new: true,
       runValidators: true,
     });
@@ -59,12 +96,18 @@ exports.updateProject = async (req, res, next) => {
 exports.deleteProject = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const deleted = await Project.findByIdAndDelete(id);
-    if (!deleted) {
+    const project = await Project.findById(id);
+    if (!project) {
       const error = new Error('Project not found');
       error.statusCode = 404;
       return next(error);
     }
+    if (project.createdBy.toString() !== req.user._id) {
+      const error = new Error('Not authorized to delete this project');
+      error.statusCode = 403;
+      return next(error);
+    }
+    await Project.findByIdAndDelete(id);
     return res.json({ success: true, data: { message: 'Project deleted' } });
   } catch (err) {
     console.error('deleteProject error', err);

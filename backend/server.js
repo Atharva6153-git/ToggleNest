@@ -73,3 +73,18 @@ mongoose.connect(MONGO_URI)
 mongoose.connection.on('error', (err) => {
   console.error('MongoDB connection error:', err);
 });
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Rejection:', reason);
+});
+
+app.get('/', (req, res) => {
+  res.json({ message: 'Togglenest backend is running' });
+});
+
+// Global error handler — catches any error that escapes route handlers
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ message: 'Server error' });
+});
