@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useParams } from 'react-router-dom'
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd'
 import { Toaster, toast } from 'react-hot-toast'
 import { createTask, deleteTask, getTasks, updateTask, updateTaskStatus } from '../../api/taskApi'
 import TaskCard from './TaskCard'
 import TaskDetailsModal from './TaskDetailsModal'
 import TaskFormModal from './TaskFormModal'
+import { getProject } from '../../api/projectApi'
 
 const columns = [
   { id: 'To-Do', title: 'To-Do' },
@@ -13,6 +15,8 @@ const columns = [
 ]
 
 function KanbanBoard() {
+  const { id: projectId } = useParams()
+  const [projectName, setProjectName] = useState('')
   const [tasks, setTasks] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -23,7 +27,7 @@ function KanbanBoard() {
 
   const fetchTasks = useCallback(async () => {
     try {
-      const data = await getTasks()
+      const data = await getTasks(projectId)
       setTasks(data)
       setError('')
     } catch (err) {
@@ -31,11 +35,33 @@ function KanbanBoard() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [projectId])
 
   useEffect(() => {
     fetchTasks()
   }, [fetchTasks])
+
+  useEffect(() => {
+    let isMounted = true
+
+    const loadProject = async () => {
+      try {
+        const project = await getProject(projectId)
+        if (isMounted) {
+          setProjectName(project.name)
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err?.response?.data?.message || 'Failed to load the project.')
+        }
+      }
+    }
+
+    loadProject()
+    return () => {
+      isMounted = false
+    }
+  }, [projectId])
 
   const tasksByColumn = useMemo(() => {
     return columns.reduce((accumulator, column) => {
@@ -48,7 +74,7 @@ function KanbanBoard() {
     setIsSubmitting(true)
 
     try {
-      await createTask(taskData)
+      await createTask({ ...taskData, project: projectId })
       setIsModalOpen(false)
       toast.success('Task created successfully')
       await fetchTasks()
@@ -159,7 +185,10 @@ function KanbanBoard() {
 
       <div className="kanban-shell">
         <header className="kanban-header">
-          <h1 className="kanban-title">Kanban Board</h1>
+          <div className="kanban-header-title">
+            <h1 className="kanban-title">Kanban Board</h1>
+            {projectName && <span className="kanban-project-name">{projectName}</span>}
+          </div>
           <button type="button" className="kanban-button" onClick={() => setIsModalOpen(true)}>
             + Add Task
           </button>
