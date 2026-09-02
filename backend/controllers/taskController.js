@@ -4,6 +4,7 @@ const ActivityLog = require('../models/ActivityLog');
 exports.createTask = async (req, res, next) => {
   try {
     const task = new Task(req.body);
+    task.createdBy = req.user?.userId;
     const saved = await task.save();
     return res.status(201).json({ success: true, data: saved });
   } catch (err) {
