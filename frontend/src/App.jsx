@@ -5,6 +5,7 @@ import Projects from './pages/Projects'
 import CreateProject from './pages/CreateProject'
 import EditProject from './pages/EditProject'
 import KanbanBoardPage from './pages/KanbanBoardPage'
+import Dashboard from './pages/Dashboard'
 import RequireAuth from './components/RequireAuth'
 import './App.css'
 
@@ -19,6 +20,14 @@ function App() {
         element={
           <RequireAuth>
             <Projects />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/dashboard"
+        element={
+          <RequireAuth>
+            <Dashboard />
           </RequireAuth>
         }
       />

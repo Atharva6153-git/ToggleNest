@@ -18,6 +18,7 @@ function Layout({ children }) {
         <div className="brand">ToggleNest</div>
 
         <nav className="sidebar-nav">
+          <button onClick={() => navigate('/dashboard')}>Dashboard</button>
           <button onClick={() => navigate('/')}>Projects</button>
           <button onClick={() => navigate('/projects/create')}>
             Create Project
