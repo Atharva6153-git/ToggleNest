@@ -1,11 +1,22 @@
 const Task = require('../models/Task');
 const ActivityLog = require('../models/ActivityLog');
+const Notification = require('../models/Notification');
 
 exports.createTask = async (req, res, next) => {
   try {
     const task = new Task(req.body);
     task.createdBy = req.user?.userId;
     const saved = await task.save();
+
+    if (saved.assignedTo) {
+      await Notification.create({
+        recipient: saved.assignedTo,
+        message: `You were assigned to task: ${saved.title}`,
+        type: 'task_assigned',
+        relatedTask: saved._id,
+      });
+    }
+
     return res.status(201).json({ success: true, data: saved });
   } catch (err) {
     console.error('createTask error', err);
@@ -138,6 +149,15 @@ exports.updateTaskStatus = async (req, res, next) => {
         action: `Status changed to ${status}`,
         performedBy: actorId,
         timestamp: new Date(),
+      });
+    }
+
+    if (updated.assignedTo && String(actorId) !== String(updated.assignedTo)) {
+      await Notification.create({
+        recipient: updated.assignedTo,
+        message: `Task "${updated.title}" status changed to ${status}`,
+        type: 'status_changed',
+        relatedTask: updated._id,
       });
     }
 
