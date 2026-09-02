@@ -47,6 +47,10 @@ app.use('/api/activity-logs', activityLogRoutes);
 const dashboardRoutes = require('./routes/dashboardRoutes');
 app.use('/api/dashboard', dashboardRoutes);
 
+// Notification routes
+const notificationRoutes = require('./routes/notificationRoutes');
+app.use('/api/notifications', notificationRoutes);
+
 app.use(notFound);
 app.use(errorHandler);
 
