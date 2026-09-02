@@ -1,7 +1,7 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const User = require("../models/user");
+const User = require("../models/User");
 const protect = require("../middleware/authMiddleware");
 
 const router = express.Router();
@@ -88,6 +88,19 @@ router.post("/login", async (req, res, next) => {
           role: user.role,
         },
       },
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+// LIST USERS (for assignee pickers)
+router.get("/users", protect, async (req, res, next) => {
+  try {
+    const users = await User.find().select("name email role").sort({ name: 1 });
+    return res.json({
+      success: true,
+      data: users,
     });
   } catch (error) {
     return next(error);

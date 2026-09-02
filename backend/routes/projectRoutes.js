@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth');
+const auth = require('../middleware/authMiddleware');
+const roleMiddleware = require('../middleware/roleMiddleware');
 const projectController = require('../controllers/projectController');
 
 router.post('/', auth, projectController.createProject);
@@ -8,6 +9,6 @@ router.get('/', auth, projectController.getProjects);
 router.get('/:id', auth, projectController.getProjectById);
 router.put('/:id', auth, projectController.updateProject);
 router.patch('/:id', auth, projectController.updateProject);
-router.delete('/:id', auth, projectController.deleteProject);
+router.delete('/:id', auth, roleMiddleware('admin'), projectController.deleteProject);
 
 module.exports = router;

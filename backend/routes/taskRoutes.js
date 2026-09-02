@@ -3,6 +3,7 @@ const { body, validationResult } = require('express-validator');
 const router = express.Router();
 const taskController = require('../controllers/taskController');
 const authMiddleware = require('../middleware/authMiddleware');
+const roleMiddleware = require('../middleware/roleMiddleware');
 
 const validateTaskPayload = [
   body('title')
@@ -56,6 +57,6 @@ router.patch(
   handleValidationErrors,
   taskController.updateTaskStatus
 );
-router.delete('/:id', taskController.deleteTask);
+router.delete('/:id', roleMiddleware('admin'), taskController.deleteTask);
 
 module.exports = router;
