@@ -25,7 +25,9 @@ app.use(helmet());
 if (process.env.NODE_ENV !== 'production') {
   app.use(morgan('dev'));
 }
-app.use(limiter);
+if (process.env.NODE_ENV === 'production') {
+  app.use(limiter);
+}
 
 // Auth routes
 const authRoutes = require('./routes/authRoutes');

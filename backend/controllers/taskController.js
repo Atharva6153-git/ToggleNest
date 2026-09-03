@@ -4,17 +4,23 @@ const Notification = require('../models/Notification');
 
 exports.createTask = async (req, res, next) => {
   try {
+    console.log('createTask body:', req.body);
     const task = new Task(req.body);
     task.createdBy = req.user?.userId;
     const saved = await task.save();
 
     if (saved.assignedTo) {
-      await Notification.create({
-        recipient: saved.assignedTo,
-        message: `You were assigned to task: ${saved.title}`,
-        type: 'task_assigned',
-        relatedTask: saved._id,
-      });
+      try {
+        await Notification.create({
+          recipient: saved.assignedTo,
+          message: `You were assigned to task: ${saved.title}`,
+          type: 'task_assigned',
+          relatedTask: saved._id,
+        });
+        console.log('createTask: notification created for assignedTo', saved.assignedTo);
+      } catch (notifErr) {
+        console.error('createTask: error creating notification', notifErr);
+      }
     }
 
     return res.status(201).json({ success: true, data: saved });
