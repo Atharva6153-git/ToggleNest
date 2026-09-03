@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { getNotifications, markAsRead, markAllAsRead } from '../api/notificationApi'
+import { TOKEN_KEY } from '../api/axiosInstance'
 
 function formatTime(timestamp) {
   const date = new Date(timestamp)
@@ -41,35 +42,54 @@ function NotificationBell() {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY))
   const containerRef = useRef(null)
 
+  const extractNotifications = useCallback((res) => {
+    if (!res) return []
+    return Array.isArray(res.data) ? res.data : Array.isArray(res) ? res : []
+  }, [])
+
   const fetchNotifications = useCallback(async () => {
+    if (!localStorage.getItem(TOKEN_KEY)) return
     try {
       const res = await getNotifications({ limit: 30 })
-      setNotifications(res.data || [])
-      setUnreadCount(res.unreadCount || 0)
+      console.log('NotificationBell raw response:', res)
+      const items = extractNotifications(res)
+      setNotifications(items)
+      setUnreadCount(res?.unreadCount || 0)
       setError('')
-    } catch {
+    } catch (err) {
+      console.error('NotificationBell fetch error:', err)
       setError('Failed to load notifications')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [extractNotifications])
 
   const refreshUnreadCount = useCallback(async () => {
+    if (!localStorage.getItem(TOKEN_KEY)) return
     try {
       const res = await getNotifications({ limit: 1 })
-      setUnreadCount(res.unreadCount || 0)
+      setUnreadCount(res?.unreadCount || 0)
+      setNotifications((prev) => {
+        const items = extractNotifications(res)
+        return items.length > 0 && items.length !== prev.length ? items : prev
+      })
     } catch {
       // ignore polling errors for the badge count
     }
+  }, [extractNotifications])
+
+  useEffect(() => {
+    setToken(localStorage.getItem(TOKEN_KEY))
   }, [])
 
   useEffect(() => {
     fetchNotifications()
     const interval = setInterval(refreshUnreadCount, 30000)
     return () => clearInterval(interval)
-  }, [fetchNotifications, refreshUnreadCount])
+  }, [fetchNotifications, refreshUnreadCount, token])
 
   useEffect(() => {
     const handleClickOutside = (e) => {
