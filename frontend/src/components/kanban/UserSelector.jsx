@@ -1,22 +1,13 @@
-import { useEffect, useState } from 'react'
-import { getUsers } from '../../api/userApi'
+import { mockUsers } from '../../data/mockUsers'
 
 function UserSelector({ value, onChange, label = 'Assignee' }) {
-  const [users, setUsers] = useState([])
-
-  useEffect(() => {
-    getUsers()
-      .then(setUsers)
-      .catch(() => setUsers([]))
-  }, [])
-
   return (
     <label className="kanban-field">
       <span>{label}</span>
       <select value={value} onChange={(event) => onChange(event.target.value)}>
         <option value="">Unassigned</option>
-        {users.map((user) => (
-          <option key={user._id} value={user._id}>
+        {mockUsers.map((user) => (
+          <option key={user.id} value={user.id}>
             {user.name} ({user.role})
           </option>
         ))}

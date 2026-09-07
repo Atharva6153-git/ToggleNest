@@ -3,14 +3,6 @@ import { useNavigate } from 'react-router-dom'
 function Layout({ children }) {
   const navigate = useNavigate()
 
-  const handleLogout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    navigate('/login')
-  }
-
-  const user = JSON.parse(localStorage.getItem('user') || 'null')
-
   return (
     <div className="app-layout">
       <aside className="sidebar">
@@ -26,10 +18,6 @@ function Layout({ children }) {
           <button onClick={() => navigate('/projects/create')}>
             Create Project
           </button>
-
-          <button onClick={() => navigate('/kanban')}>
-            Kanban Board
-          </button>
         </nav>
       </aside>
 
@@ -40,11 +28,8 @@ function Layout({ children }) {
             <p>Manage your projects efficiently</p>
           </div>
 
-          <div className="topbar-actions">
-            {user && <span className="topbar-user">{user.name}</span>}
-            <button className="logout-btn" onClick={handleLogout}>
-              Logout
-            </button>
+          <div className="profile-circle">
+            S
           </div>
         </div>
 

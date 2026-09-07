@@ -1,16 +1,5 @@
 const Project = require('../models/Project');
 
-const CREATE_FIELDS = ['name', 'description', 'deadline', 'members'];
-const UPDATE_FIELDS = ['name', 'description', 'deadline', 'members'];
-
-function pick(obj, keys) {
-  const result = {};
-  for (const key of keys) {
-    if (obj[key] !== undefined) result[key] = obj[key];
-  }
-  return result;
-}
-
 exports.createProject = async (req, res, next) => {
   try {
     const data = pick(req.body, CREATE_FIELDS);

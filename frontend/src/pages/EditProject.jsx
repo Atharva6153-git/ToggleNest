@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Layout from '../components/Layout'
-import { deleteProject, getProjectById, updateProject } from '../api/projectApi'
 
 function EditProject() {
   const { id } = useParams()
@@ -10,24 +9,23 @@ function EditProject() {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [deadline, setDeadline] = useState('')
-  const [loading, setLoading] = useState(true)
-  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
-    getProjectById(id)
-      .then((project) => {
-        setName(project.name)
-        setDescription(project.description || '')
-        setDeadline(project.deadline ? String(project.deadline).slice(0, 10) : '')
-      })
-      .catch((err) => {
-        alert(err?.response?.data?.message || 'Could not load the project.')
-        navigate('/')
-      })
-      .finally(() => setLoading(false))
-  }, [id, navigate])
+    const projects =
+      JSON.parse(localStorage.getItem('projects')) || []
 
-  const handleUpdate = async (e) => {
+    const project = projects.find(
+      (project) => String(project.id) === String(id)
+    )
+
+    if (project) {
+      setName(project.name)
+      setDescription(project.description)
+      setDeadline(project.deadline)
+    }
+  }, [id])
+
+  const handleUpdate = (e) => {
     e.preventDefault()
 
     if (!name || !description || !deadline) {
@@ -35,46 +33,55 @@ function EditProject() {
       return
     }
 
-    setSubmitting(true)
+    const projects =
+      JSON.parse(localStorage.getItem('projects')) || []
 
-    try {
-      await updateProject(id, { name, description, deadline })
-      alert('Project updated successfully!')
-      navigate('/')
-    } catch (err) {
-      alert(err?.response?.data?.message || 'Could not update the project.')
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  const handleDelete = async () => {
-    const confirmDelete = window.confirm(
-      'Are you sure you want to delete this project?'
+    const updatedProjects = projects.map((project) =>
+      String(project.id) === String(id)
+        ? {
+            ...project,
+            name,
+            description,
+            deadline
+          }
+        : project
     )
 
-    if (!confirmDelete) {
-      return
-    }
-
-    try {
-      await deleteProject(id)
-      alert('Project deleted successfully!')
-      navigate('/')
-    } catch (err) {
-      alert(err?.response?.data?.message || 'Could not delete the project.')
-    }
-  }
-
-  if (loading) {
-    return (
-      <Layout>
-        <div className="page-container">
-          <p className="page-state">Loading project...</p>
-        </div>
-      </Layout>
+    localStorage.setItem(
+      'projects',
+      JSON.stringify(updatedProjects)
     )
+
+    alert('Project updated successfully!')
+
+    navigate('/')
   }
+
+  const handleDelete = () => {
+  const confirmDelete = window.confirm(
+    'Are you sure you want to delete this project?'
+  )
+
+  if (!confirmDelete) {
+    return
+  }
+
+  const projects =
+    JSON.parse(localStorage.getItem('projects')) || []
+
+  const updatedProjects = projects.filter(
+    (project) => String(project.id) !== String(id)
+  )
+
+  localStorage.setItem(
+    'projects',
+    JSON.stringify(updatedProjects)
+  )
+
+  alert('Project deleted successfully!')
+
+  navigate('/')
+}
 
   return (
     <Layout>
@@ -126,9 +133,8 @@ function EditProject() {
             <button
               className="primary-btn"
               type="submit"
-              disabled={submitting}
             >
-              {submitting ? 'Updating...' : 'Update Project'}
+              Update Project
             </button>
 
             <button

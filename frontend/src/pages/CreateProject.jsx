@@ -1,17 +1,15 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
-import { createProject } from '../api/projectApi'
 
 
 function CreateProject() {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [deadline, setDeadline] = useState('')
-  const [submitting, setSubmitting] = useState(false)
   const navigate = useNavigate()
 
-const handleSubmit = async (e) => {
+const handleSubmit = (e) => {
   e.preventDefault()
 
   if (!name || !description || !deadline) {
@@ -19,19 +17,28 @@ const handleSubmit = async (e) => {
     return
   }
 
-  setSubmitting(true)
-
-  try {
-    await createProject({ name, description, deadline })
-    alert('Project created successfully!')
-    navigate('/')
-  } catch (err) {
-    alert(err?.response?.data?.message || 'Could not create the project.')
-  } finally {
-    setSubmitting(false)
+  const newProject = {
+    id: Date.now(),
+    name,
+    description,
+    deadline
   }
-}
 
+  const existingProjects =
+    JSON.parse(localStorage.getItem('projects')) || []
+
+  const updatedProjects = [...existingProjects, newProject]
+
+  localStorage.setItem(
+    'projects',
+    JSON.stringify(updatedProjects)
+  )
+
+  alert('Project created successfully!')
+
+  navigate('/')
+}
+ 
 return (
     <Layout>
   <div className="page-container">
@@ -72,8 +79,8 @@ return (
           </div>
 
           <div className="form-actions">
-            <button className="primary-btn" type="submit" disabled={submitting}>
-              {submitting ? 'Creating...' : 'Create Project'}
+            <button className="primary-btn" type="submit">
+              Create Project
             </button>
 
             <button
