@@ -1,5 +1,18 @@
 const Project = require('../models/Project');
 
+const CREATE_FIELDS = ['name', 'description', 'deadline', 'members'];
+const UPDATE_FIELDS = ['name', 'description', 'deadline', 'members'];
+
+function pick(obj, fields) {
+  const result = {};
+  for (const field of fields) {
+    if (obj[field] !== undefined) {
+      result[field] = obj[field];
+    }
+  }
+  return result;
+}
+
 exports.createProject = async (req, res, next) => {
   try {
     const data = pick(req.body, CREATE_FIELDS);
@@ -78,7 +91,7 @@ exports.updateProject = async (req, res, next) => {
     }
     const data = pick(req.body, UPDATE_FIELDS);
     const updated = await Project.findByIdAndUpdate(id, data, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     });
     if (!updated) {

@@ -18,6 +18,10 @@ function Layout({ children }) {
           <button onClick={() => navigate('/projects/create')}>
             Create Project
           </button>
+
+          <button onClick={() => navigate('/kanban')}>
+            Kanban Board
+          </button>
         </nav>
       </aside>
 
