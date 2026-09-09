@@ -1,31 +1,4 @@
-<<<<<<< HEAD
-/* Layout */
 
-.app-layout {
-  display: flex;
-  min-height: 100vh;
-}
-
-.sidebar {
-  width: 240px;
-  flex-shrink: 0;
-  background: var(--sidebar-bg);
-  color: var(--sidebar-text);
-  display: flex;
-  flex-direction: column;
-  padding: 24px 16px;
-  position: sticky;
-  top: 0;
-  height: 100vh;
-}
-
-.brand {
-  font-size: 20px;
-  font-weight: 700;
-  color: #ffffff;
-  padding: 0 12px 24px;
-  letter-spacing: 0.02em;
-=======
 /* ===== ToggleNest App Styles ===== */
 
 /* Override Vite boilerplate #root constraints */
@@ -62,29 +35,32 @@ select {
   font-size: 15px;
 }
 
-/* ===== Layout ===== */
+/* Layout */
+
 .app-layout {
   display: flex;
-  min-height: 100svh;
+  min-height: 100vh;
 }
 
 .sidebar {
   width: 240px;
   flex-shrink: 0;
-  background: #16171d;
-  color: #fff;
-  padding: 24px 16px;
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text);
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  padding: 24px 16px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
 }
 
 .brand {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
-  letter-spacing: -0.3px;
-  padding: 0 8px;
->>>>>>> feature/project-crud
+  color: #ffffff;
+  padding: 0 12px 24px;
+  letter-spacing: 0.02em;
 }
 
 .sidebar-nav {
@@ -96,34 +72,21 @@ select {
 .sidebar-nav button {
   background: transparent;
   border: none;
-<<<<<<< HEAD
   color: var(--sidebar-text);
   text-align: left;
   padding: 10px 12px;
   font-size: 14px;
   border-radius: 8px;
-=======
-  color: #c9c9d4;
-  text-align: left;
-  padding: 10px 12px;
-  border-radius: 8px;
-  font-size: 15px;
->>>>>>> feature/project-crud
   transition: background 0.15s, color 0.15s;
 }
 
 .sidebar-nav button:hover {
   background: rgba(255, 255, 255, 0.08);
-<<<<<<< HEAD
   color: #ffffff;
-=======
-  color: #fff;
->>>>>>> feature/project-crud
 }
 
 .main-content {
   flex: 1;
-<<<<<<< HEAD
   min-width: 0;
   padding: 24px 32px 48px;
 }
@@ -514,10 +477,6 @@ select {
   border-radius: 16px;
   padding: 28px;
   box-shadow: var(--shadow);
-=======
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
 }
 
 .topbar {
@@ -1263,8 +1222,6 @@ select {
   .page-header {
     flex-direction: column;
   }
->>>>>>> feature/project-crud
-}
 
 .form-card h1 {
   font-size: 22px;
