@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Projects from './pages/Projects'
@@ -48,6 +48,14 @@ function App() {
         }
       />
       <Route
+        path="/kanban"
+        element={
+          <RequireAuth>
+            <KanbanBoardPage />
+          </RequireAuth>
+        }
+      />
+      <Route
         path="/projects/:id/board"
         element={
           <RequireAuth>
@@ -55,6 +63,7 @@ function App() {
           </RequireAuth>
         }
       />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }
