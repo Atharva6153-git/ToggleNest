@@ -1,3 +1,4 @@
+<<<<<<<<< Temporary merge branch 1
 import { Routes, Route } from 'react-router-dom'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -8,6 +9,9 @@ import './App.css'
 import KanbanBoardPage from './pages/KanbanBoardPage'
 import Dashboard from './pages/Dashboard'
 import RequireAuth from './components/RequireAuth'
+=========
+>>>>>>>>> Temporary merge branch 2
+import './App.css'
 
 function App() {
   return (
@@ -48,6 +52,14 @@ function App() {
         }
       />
       <Route
+        path="/kanban"
+        element={
+          <RequireAuth>
+            <KanbanBoardPage />
+          </RequireAuth>
+        }
+      />
+      <Route
         path="/projects/:id/board"
         element={
           <RequireAuth>
@@ -55,6 +67,13 @@ function App() {
           </RequireAuth>
         }
       />
+=========
+      <Route path="/" element={<Projects />} />
+      <Route path="/projects/create" element={<CreateProject />} />
+      <Route path="/projects/edit/:id" element={<EditProject />} />
+      <Route path="/kanban" element={<KanbanBoardPage />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+>>>>>>>>> Temporary merge branch 2
     </Routes>
   )
 }
