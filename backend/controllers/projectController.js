@@ -14,19 +14,6 @@ const pick = (source, allowedFields) => {
   return result;
 };
 
-const CREATE_FIELDS = ['name', 'description', 'deadline', 'members'];
-const UPDATE_FIELDS = ['name', 'description', 'deadline', 'members'];
-
-function pick(obj, fields) {
-  const result = {};
-  for (const field of fields) {
-    if (obj[field] !== undefined) {
-      result[field] = obj[field];
-    }
-  }
-  return result;
-}
-
 exports.createProject = async (req, res, next) => {
   try {
     const data = pick(req.body, CREATE_FIELDS);
