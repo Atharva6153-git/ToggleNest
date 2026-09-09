@@ -1,24 +1,38 @@
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
+import { getProjects } from '../api/projectApi'
 
 const Projects = () => {
   const navigate = useNavigate()
 
   const [projects, setProjects] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    const savedProjects =
-      JSON.parse(localStorage.getItem('projects')) || []
+    const loadProjects = async () => {
+      try {
+        const data = await getProjects()
+        setProjects(data)
+      } catch (err) {
+        setError(err?.response?.data?.message || 'Failed to load projects.')
+      } finally {
+        setLoading(false)
+      }
+    }
 
-    setProjects(savedProjects)
+    loadProjects()
   }, [])
+
+  const formattedDeadline = (date) => {
+    if (!date) return 'No deadline'
+    return new Date(date).toLocaleDateString()
+  }
 
   return (
     <Layout>
       <div className="page-container">
-
-        {/* Page Header */}
         <div className="page-header">
           <div className="page-title">
             <h1>My Projects</h1>
@@ -33,66 +47,59 @@ const Projects = () => {
           </button>
         </div>
 
-        {/* No Projects */}
-        {projects.length === 0 ? (
+        {loading ? (
+          <p className="empty-state">Loading projects...</p>
+        ) : error ? (
+          <p className="empty-state">{error}</p>
+        ) : projects.length === 0 ? (
           <div className="empty-state">
             <h2>No projects yet</h2>
             <p>Create your first project to get started.</p>
           </div>
         ) : (
-
-          /* Project Cards */
           <div className="projects-grid">
-
             {projects.map((project) => (
-              <div className="project-card" key={project.id}>
-
-                {/* Card Top */}
+              <div className="project-card" key={project._id}>
                 <div className="project-card-top">
-                  <span className="status-badge">
-                    Active
-                  </span>
-
+                  <span className="status-badge">Active</span>
                   <span className="project-id">
-                    #{String(project.id).slice(-4)}
+                    #{String(project._id).slice(-4)}
                   </span>
                 </div>
 
-                {/* Project Information */}
                 <h2>{project.name}</h2>
 
-                <p className="project-description">
-                  {project.description}
-                </p>
+                <p className="project-description">{project.description}</p>
 
-                {/* Deadline */}
                 <div className="project-meta">
                   <span>📅</span>
-
                   <div>
                     <small>Deadline</small>
-                    <p>{project.deadline}</p>
+                    <p>{formattedDeadline(project.deadline)}</p>
                   </div>
                 </div>
 
-                {/* Manage Button */}
                 <div className="project-card-footer">
                   <button
                     className="manage-btn"
+                    onClick={() => navigate(`/projects/${project._id}/board`)}
+                  >
+                    Open Board →
+                  </button>
+
+                  <button
+                    className="secondary-btn"
                     onClick={() =>
-                      navigate(`/projects/edit/${project.id}`)
+                      navigate(`/projects/edit/${project._id}`)
                     }
                   >
-                    Manage Project →
+                    Manage
                   </button>
                 </div>
-
               </div>
             ))}
-
           </div>
         )}
-
       </div>
     </Layout>
   )

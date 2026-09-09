@@ -94,6 +94,19 @@ router.post("/login", async (req, res, next) => {
   }
 });
 
+// LIST USERS (for assignee pickers)
+router.get("/users", protect, async (req, res, next) => {
+  try {
+    const users = await User.find().select("name email role").sort({ name: 1 });
+    return res.json({
+      success: true,
+      data: users,
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 // PROTECTED PROFILE ROUTE
 router.get("/profile", protect, async (req, res, next) => {
   try {

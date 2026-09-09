@@ -1,20 +1,26 @@
 import { useNavigate } from 'react-router-dom'
+import { logout } from '../api/authApi'
+import NotificationBell from './NotificationBell'
 
 function Layout({ children }) {
   const navigate = useNavigate()
 
+  const user = JSON.parse(localStorage.getItem('user') || 'null')
+  const initial = user?.name?.charAt(0)?.toUpperCase() || 'S'
+
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+  }
+
   return (
     <div className="app-layout">
       <aside className="sidebar">
-        <div className="brand">
-          ToggleNest
-        </div>
+        <div className="brand">ToggleNest</div>
 
         <nav className="sidebar-nav">
-          <button onClick={() => navigate('/')}>
-            Projects
-          </button>
-
+          <button onClick={() => navigate('/dashboard')}>Dashboard</button>
+          <button onClick={() => navigate('/')}>Projects</button>
           <button onClick={() => navigate('/projects/create')}>
             Create Project
           </button>
@@ -32,8 +38,12 @@ function Layout({ children }) {
             <p>Manage your projects efficiently</p>
           </div>
 
-          <div className="profile-circle">
-            S
+          <div className="topbar-actions">
+            <NotificationBell />
+            <span className="profile-circle">{initial}</span>
+            <button className="logout-btn" onClick={handleLogout}>
+              Log out
+            </button>
           </div>
         </div>
 

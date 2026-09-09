@@ -25,7 +25,9 @@ app.use(helmet());
 if (process.env.NODE_ENV !== 'production') {
   app.use(morgan('dev'));
 }
-app.use(limiter);
+if (process.env.NODE_ENV === 'production') {
+  app.use(limiter);
+}
 
 // Auth routes
 const authRoutes = require('./routes/authRoutes');
@@ -46,6 +48,10 @@ app.use('/api/activity-logs', activityLogRoutes);
 // Dashboard routes
 const dashboardRoutes = require('./routes/dashboardRoutes');
 app.use('/api/dashboard', dashboardRoutes);
+
+// Notification routes
+const notificationRoutes = require('./routes/notificationRoutes');
+app.use('/api/notifications', notificationRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
