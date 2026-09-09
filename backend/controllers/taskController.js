@@ -93,7 +93,7 @@ exports.updateTask = async (req, res, next) => {
   try {
     const { id } = req.params;
     const updated = await Task.findByIdAndUpdate(id, req.body, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     });
     if (!updated) {
@@ -139,7 +139,7 @@ exports.updateTaskStatus = async (req, res, next) => {
     const updated = await Task.findByIdAndUpdate(
       id,
       { status },
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     );
 
     if (!updated) {
