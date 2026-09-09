@@ -4,10 +4,10 @@ import Register from './pages/Register'
 import Projects from './pages/Projects'
 import CreateProject from './pages/CreateProject'
 import EditProject from './pages/EditProject'
+import './App.css'
 import KanbanBoardPage from './pages/KanbanBoardPage'
 import Dashboard from './pages/Dashboard'
 import RequireAuth from './components/RequireAuth'
-import './App.css'
 
 function App() {
   return (
