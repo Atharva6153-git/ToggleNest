@@ -4,6 +4,7 @@ import { CircularProgressbar } from 'react-circular-progressbar'
 import 'react-circular-progressbar/dist/styles.css'
 import Layout from '../components/Layout'
 import PageTransition from '../components/PageTransition'
+import SkeletonCard from '../components/SkeletonCard'
 import { getDashboardSummary } from '../api/dashboardApi'
 
 const Dashboard = () => {
@@ -58,7 +59,36 @@ const Dashboard = () => {
         </div>
 
         {loading ? (
-          <p className="empty-state">Loading dashboard...</p>
+          <>
+            <div className="dashboard-total">
+              <SkeletonCard variant="stat" />
+
+              <div className="dashboard-completion">
+                <div className="completion-header">
+                  <small>Completion</small>
+                </div>
+                <SkeletonCard variant="ring" />
+              </div>
+            </div>
+
+            <div className="dashboard-section">
+              <h2>Tasks by Status</h2>
+              <div className="dashboard-grid">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <SkeletonCard key={index} variant="stat" />
+                ))}
+              </div>
+            </div>
+
+            <div className="dashboard-section">
+              <h2>Tasks by Priority</h2>
+              <div className="dashboard-grid">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <SkeletonCard key={index} variant="stat" />
+                ))}
+              </div>
+            </div>
+          </>
         ) : error ? (
           <p className="empty-state">{error}</p>
         ) : (

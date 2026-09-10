@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { Toaster, toast } from 'react-hot-toast'
 import { createTask, deleteTask, getTasks, updateTask, updateTaskStatus } from '../../api/taskApi'
 import TaskCard from './TaskCard'
+import SkeletonCard from '../SkeletonCard'
 import TaskDetailsModal from './TaskDetailsModal'
 import TaskFormModal from './TaskFormModal'
 import PageTransition from '../PageTransition'
@@ -211,7 +212,21 @@ function KanbanBoard() {
         </header>
 
         {loading ? (
-          <p className="kanban-state">Loading tasks...</p>
+          <section className="kanban-columns" aria-label="Loading board">
+            {columns.map((column) => (
+              <div className="kanban-column" key={column.id}>
+                <div className="kanban-column-header">
+                  <h2 className="kanban-column-title">{column.title}</h2>
+                  <span className="kanban-count">–</span>
+                </div>
+                <div className="kanban-card-list">
+                  {Array.from({ length: 3 }).map((_, index) => (
+                    <SkeletonCard key={index} variant="task" />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </section>
         ) : error ? (
           <p className="kanban-state kanban-state-error">{error}</p>
         ) : (
