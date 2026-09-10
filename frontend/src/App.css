@@ -1133,3 +1133,89 @@
     align-items: stretch;
   }
 }
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.07) 50%,
+    transparent 80%
+  );
+  transform: translateX(-100%);
+  animation: skeleton-sweep 1.4s ease-in-out infinite;
+}
+
+@keyframes skeleton-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.skeleton-stat {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 18px;
+  min-height: 86px;
+}
+
+.skeleton-ring {
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  margin: 0 auto;
+}
+
+.skeleton-task {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+}
+
+.skeleton-bar {
+  display: block;
+  height: 12px;
+  border-radius: 6px;
+  background: var(--surface-hover);
+}
+
+.skeleton-bar-label {
+  height: 12px;
+  width: 56%;
+}
+
+.skeleton-bar-value {
+  height: 26px;
+  width: 40%;
+}
+
+.skeleton-bar-title {
+  height: 14px;
+  width: 72%;
+}
+
+.skeleton-bar-meta {
+  height: 11px;
+  width: 100%;
+}
+
+.skeleton-bar-meta-short {
+  width: 55%;
+}
