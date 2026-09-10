@@ -1,6 +1,9 @@
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
+import { CircularProgressbar } from 'react-circular-progressbar'
+import 'react-circular-progressbar/dist/styles.css'
 import Layout from '../components/Layout'
+import PageTransition from '../components/PageTransition'
 import { getDashboardSummary } from '../api/dashboardApi'
 
 const Dashboard = () => {
@@ -41,7 +44,8 @@ const Dashboard = () => {
 
   return (
     <Layout>
-      <div className="page-container">
+      <PageTransition>
+        <div className="page-container">
         <div className="page-header">
           <div className="page-title">
             <h1>Dashboard</h1>
@@ -68,12 +72,11 @@ const Dashboard = () => {
               <div className="dashboard-completion">
                 <div className="completion-header">
                   <small>Completion</small>
-                  <span className="completion-pct">{completion}%</span>
                 </div>
-                <div className="progress-track">
-                  <div
-                    className="progress-fill"
-                    style={{ width: `${completion}%` }}
+                <div className="completion-ring">
+                  <CircularProgressbar
+                    value={completion}
+                    text={`${completion}%`}
                   />
                 </div>
               </div>
@@ -107,7 +110,8 @@ const Dashboard = () => {
             </div>
           </>
         )}
-      </div>
+        </div>
+      </PageTransition>
     </Layout>
   )
 }

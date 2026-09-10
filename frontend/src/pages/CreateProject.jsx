@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast, Toaster } from 'react-hot-toast'
 import Layout from '../components/Layout'
+import PageTransition from '../components/PageTransition'
 import { createProject } from '../api/projectApi'
 
 function CreateProject() {
@@ -39,7 +40,8 @@ function CreateProject() {
   return (
     <Layout>
       <Toaster position="top-right" />
-      <div className="page-container">
+      <PageTransition>
+        <div className="page-container">
         <div className="form-wrapper">
           <div className="form-card">
             <h1>Create Project</h1>
@@ -99,7 +101,8 @@ function CreateProject() {
             </form>
           </div>
         </div>
-      </div>
+        </div>
+      </PageTransition>
     </Layout>
   )
 }

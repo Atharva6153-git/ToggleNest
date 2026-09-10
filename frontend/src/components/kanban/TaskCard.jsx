@@ -21,10 +21,12 @@ function getPriorityClass(priority = 'Medium') {
 function TaskCard({ task, onClick, provided, snapshot }) {
   const assigneeName = task?.assignedTo?.name || task?.assignedTo || 'Unassigned'
   const dueDate = formatDate(task?.dueDate)
+  const priorityLabel = task?.priority || 'Medium'
+  const priorityBorderClass = `priority-border-${String(priorityLabel).toLowerCase()}`
 
   return (
     <article
-      className={`kanban-card ${snapshot?.isDragging ? 'is-dragging' : ''}`}
+      className={`kanban-card ${priorityBorderClass} ${snapshot?.isDragging ? 'is-dragging' : ''}`}
       onClick={onClick}
       role="button"
       tabIndex={0}
@@ -34,8 +36,8 @@ function TaskCard({ task, onClick, provided, snapshot }) {
     >
       <div className="kanban-card-header">
         <h3 className="kanban-task-title">{task?.title || 'Untitled task'}</h3>
-        <span className={`priority-badge ${getPriorityClass(task?.priority)}`}>
-          {task?.priority || 'Medium'}
+        <span className={`priority-badge ${getPriorityClass(priorityLabel)}`}>
+          {priorityLabel}
         </span>
       </div>
 

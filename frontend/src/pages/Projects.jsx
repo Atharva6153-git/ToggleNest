@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
+import PageTransition from '../components/PageTransition'
 import { getProjects } from '../api/projectApi'
 
 const Projects = () => {
@@ -32,7 +33,8 @@ const Projects = () => {
 
   return (
     <Layout>
-      <div className="page-container">
+      <PageTransition>
+        <div className="page-container">
         <div className="page-header">
           <div className="page-title">
             <h1>My Projects</h1>
@@ -100,7 +102,8 @@ const Projects = () => {
             ))}
           </div>
         )}
-      </div>
+        </div>
+      </PageTransition>
     </Layout>
   )
 }
