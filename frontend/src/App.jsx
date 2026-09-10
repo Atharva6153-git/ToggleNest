@@ -2,6 +2,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import LandingPage from './pages/LandingPage'
 import Projects from './pages/Projects'
 import CreateProject from './pages/CreateProject'
 import EditProject from './pages/EditProject'
@@ -9,6 +10,7 @@ import './App.css'
 import KanbanBoardPage from './pages/KanbanBoardPage'
 import Dashboard from './pages/Dashboard'
 import RequireAuth from './components/RequireAuth'
+import HomeRoute from './components/HomeRoute'
 
 function App() {
   const location = useLocation()
@@ -21,6 +23,14 @@ function App() {
 
       <Route
         path="/"
+        element={
+          <HomeRoute>
+            <LandingPage />
+          </HomeRoute>
+        }
+      />
+      <Route
+        path="/projects"
         element={
           <RequireAuth>
             <Projects />

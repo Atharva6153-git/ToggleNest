@@ -25,7 +25,7 @@ function EditProject() {
         setDeadline(project.deadline ? project.deadline.slice(0, 10) : '')
       } catch (err) {
         toast.error(err?.response?.data?.message || 'Failed to load the project.')
-        navigate('/')
+        navigate('/projects')
       } finally {
         setLoading(false)
       }
@@ -51,7 +51,7 @@ function EditProject() {
         deadline: new Date(`${deadline}T00:00:00`).toISOString(),
       })
       toast.success('Project updated successfully!')
-      navigate('/')
+      navigate('/projects')
     } catch (err) {
       toast.error(err?.response?.data?.message || 'Could not update the project.')
     } finally {
@@ -73,7 +73,7 @@ function EditProject() {
     try {
       await deleteProject(id)
       toast.success('Project deleted successfully!')
-      navigate('/')
+      navigate('/projects')
     } catch (err) {
       toast.error(err?.response?.data?.message || 'Could not delete the project.')
     } finally {

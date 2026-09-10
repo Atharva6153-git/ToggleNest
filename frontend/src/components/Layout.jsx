@@ -20,7 +20,7 @@ function Layout({ children }) {
 
         <nav className="sidebar-nav">
           <button onClick={() => navigate('/dashboard')}>Dashboard</button>
-          <button onClick={() => navigate('/')}>Projects</button>
+          <button onClick={() => navigate('/projects')}>Projects</button>
           <button onClick={() => navigate('/projects/create')}>
             Create Project
           </button>

@@ -53,7 +53,7 @@ const Dashboard = () => {
             <p>Overview of tasks across your workspace.</p>
           </div>
 
-          <button className="create-btn" onClick={() => navigate('/')}>
+          <button className="create-btn" onClick={() => navigate('/projects')}>
             View Projects
           </button>
         </div>
