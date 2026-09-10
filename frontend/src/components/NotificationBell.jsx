@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { getNotifications, markAsRead, markAllAsRead } from '../api/notificationApi'
 import { TOKEN_KEY } from '../api/axiosInstance'
 
@@ -149,8 +150,15 @@ function NotificationBell() {
         {unreadCount > 0 && <span className="notification-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>}
       </button>
 
+      <AnimatePresence>
       {open && (
-        <div className="notification-dropdown">
+        <motion.div
+          className="notification-dropdown"
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.15 }}
+        >
           <div className="notification-dropdown-header">
             <span className="notification-title">Notifications</span>
             {unreadCount > 0 && (
@@ -180,8 +188,9 @@ function NotificationBell() {
               ))
             )}
           </div>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </div>
   )
 }
