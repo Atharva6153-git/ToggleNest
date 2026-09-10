@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { AnimatePresence } from 'framer-motion'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Projects from './pages/Projects'
@@ -10,8 +11,11 @@ import Dashboard from './pages/Dashboard'
 import RequireAuth from './components/RequireAuth'
 
 function App() {
+  const location = useLocation()
+
   return (
-    <Routes>
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
@@ -65,6 +69,7 @@ function App() {
       />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </AnimatePresence>
   )
 }
 
