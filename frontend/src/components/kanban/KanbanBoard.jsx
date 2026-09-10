@@ -6,6 +6,7 @@ import { createTask, deleteTask, getTasks, updateTask, updateTaskStatus } from '
 import TaskCard from './TaskCard'
 import TaskDetailsModal from './TaskDetailsModal'
 import TaskFormModal from './TaskFormModal'
+import PageTransition from '../PageTransition'
 import { getProject } from '../../api/projectApi'
 
 const columns = [
@@ -161,7 +162,8 @@ function KanbanBoard() {
   }
 
   return (
-    <div className="kanban-page">
+    <PageTransition>
+      <div className="kanban-page">
       <Toaster position="top-right" />
 
       <TaskFormModal
@@ -245,7 +247,8 @@ function KanbanBoard() {
           </DragDropContext>
         )}
       </div>
-    </div>
+      </div>
+    </PageTransition>
   )
 }
 

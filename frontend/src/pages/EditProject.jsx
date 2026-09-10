@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast, Toaster } from 'react-hot-toast'
 import Layout from '../components/Layout'
+import PageTransition from '../components/PageTransition'
 import { getProject, updateProject, deleteProject } from '../api/projectApi'
 
 function EditProject() {
@@ -82,9 +83,11 @@ function EditProject() {
   if (loading) {
     return (
       <Layout>
-        <div className="page-container">
-          <p className="empty-state">Loading project...</p>
-        </div>
+        <PageTransition>
+          <div className="page-container">
+            <p className="empty-state">Loading project...</p>
+          </div>
+        </PageTransition>
       </Layout>
     )
   }
@@ -92,7 +95,8 @@ function EditProject() {
   return (
     <Layout>
       <Toaster position="top-right" />
-      <div className="page-container">
+      <PageTransition>
+        <div className="page-container">
         <div className="form-wrapper">
           <div className="form-card">
             <h1>Manage Project</h1>
@@ -159,7 +163,8 @@ function EditProject() {
             </form>
           </div>
         </div>
-      </div>
+        </div>
+      </PageTransition>
     </Layout>
   )
 }

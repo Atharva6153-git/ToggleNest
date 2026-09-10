@@ -306,7 +306,7 @@
 }
 
 .project-card {
-  background: var(--surface);
+  background: linear-gradient(160deg, var(--surface-hover), var(--surface));
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 18px;
@@ -314,12 +314,13 @@
   flex-direction: column;
   gap: 12px;
   box-shadow: var(--shadow);
-  transition: box-shadow 0.15s, transform 0.15s;
+  transition: box-shadow 0.25s, transform 0.25s, border-color 0.25s;
 }
 
 .project-card:hover {
   box-shadow: var(--shadow-lg);
-  transform: translateY(-2px);
+  transform: translateY(-6px) scale(1.02);
+  border-color: var(--accent-soft);
 }
 
 .project-card-top {
@@ -413,7 +414,7 @@
 
 .secondary-btn:hover {
   background: var(--bg);
-  border-color: #cbd5e1;
+  border-color: var(--accent-hover);
 }
 
 .empty-state {
@@ -680,14 +681,17 @@
 }
 
 .kanban-column {
-  background: #eef1f6;
+  background: linear-gradient(180deg, var(--surface-hover), var(--surface));
+  border: 1px solid var(--border);
   border-radius: 14px;
   padding: 14px;
-  transition: background 0.15s;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
 }
 
 .kanban-column.is-dragging-over {
-  background: #e0e7ff;
+  background: var(--surface-hover);
+  border-color: var(--accent);
+  box-shadow: var(--shadow-lg);
 }
 
 .kanban-column-header {
@@ -736,16 +740,31 @@
   padding: 14px;
   box-shadow: var(--shadow);
   cursor: grab;
-  transition: box-shadow 0.15s;
+  transition: box-shadow 0.25s, transform 0.25s, border-color 0.25s;
 }
 
 .kanban-card:hover {
   box-shadow: var(--shadow-lg);
+  transform: translateY(-3px) scale(1.01);
+  border-color: var(--accent-soft);
 }
 
 .kanban-card.is-dragging {
   box-shadow: var(--shadow-lg);
   opacity: 0.85;
+  transform: rotate(2deg) scale(1.03);
+}
+
+.kanban-card.priority-border-low {
+  border-left: 4px solid var(--success);
+}
+
+.kanban-card.priority-border-medium {
+  border-left: 4px solid var(--warning);
+}
+
+.kanban-card.priority-border-high {
+  border-left: 4px solid var(--danger);
 }
 
 .kanban-card-header {
@@ -774,8 +793,8 @@
 }
 
 .priority-medium {
-  background: #fffbeb;
-  color: #d97706;
+  background: var(--warning-soft);
+  color: var(--warning);
 }
 
 .priority-high {
@@ -942,11 +961,18 @@
 }
 
 .stat-card {
-  background: var(--surface);
+  background: linear-gradient(160deg, var(--surface-hover), var(--surface));
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 18px;
   box-shadow: var(--shadow);
+  transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--accent-soft);
 }
 
 .stat-card small {
@@ -965,8 +991,12 @@
 }
 
 .stat-card-total {
-  background: var(--accent-soft);
-  border-color: #e0e7ff;
+  background: linear-gradient(135deg, var(--accent-soft), var(--surface) 68%);
+  border-color: var(--border);
+}
+
+.stat-card-total:hover {
+  border-color: var(--accent);
 }
 
 .stat-card-total .stat-value {
@@ -978,15 +1008,27 @@
 }
 
 .stat-priority-medium .stat-value {
-  color: #d97706;
+  color: var(--warning);
 }
 
 .stat-priority-high .stat-value {
   color: var(--danger);
 }
 
+.stat-priority-low {
+  background: linear-gradient(135deg, var(--success-soft), var(--surface) 68%);
+}
+
+.stat-priority-medium {
+  background: linear-gradient(135deg, var(--warning-soft), var(--surface) 68%);
+}
+
+.stat-priority-high {
+  background: linear-gradient(135deg, var(--danger-soft), var(--surface) 68%);
+}
+
 .dashboard-completion {
-  background: var(--surface);
+  background: linear-gradient(160deg, var(--surface-hover), var(--surface));
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 18px;
@@ -1000,7 +1042,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
+  margin-bottom: 16px;
 }
 
 .completion-header small {
@@ -1010,25 +1052,32 @@
   letter-spacing: 0.04em;
 }
 
-.completion-pct {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--accent);
+.completion-ring {
+  display: flex;
+  justify-content: center;
+  padding: 4px 0 8px;
 }
 
-.progress-track {
+.completion-ring .CircularProgressbar {
   width: 100%;
-  height: 12px;
-  background: #eef1f6;
-  border-radius: 999px;
-  overflow: hidden;
+  max-width: 170px;
+  vertical-align: middle;
 }
 
-.progress-fill {
-  height: 100%;
-  background: var(--accent);
-  border-radius: 999px;
-  transition: width 0.4s ease;
+.completion-ring .CircularProgressbar-path {
+  stroke: var(--accent);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.8s ease 0.2s;
+}
+
+.completion-ring .CircularProgressbar-trail {
+  stroke: var(--surface-hover);
+}
+
+.completion-ring .CircularProgressbar-text {
+  fill: var(--accent);
+  font-size: 22px;
+  font-weight: 700;
 }
 
 .dashboard-section {
