@@ -11,6 +11,56 @@ router.get("/test", (req, res) => {
   res.send("Auth route is working!");
 });
 
+/**
+ * @swagger
+ * /auth/register:
+ *   post:
+ *     summary: Register a new user
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, email, password]
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: John Doe
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: john@example.com
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 example: secret123
+ *               role:
+ *                 type: string
+ *                 enum: [admin, member]
+ *                 description: Optional, defaults to "member"
+ *                 example: member
+ *     responses:
+ *       201:
+ *         description: User registered successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     message:
+ *                       type: string
+ *                       example: User registered successfully
+ *       400:
+ *         description: User already exists or invalid payload
+ */
 // REGISTER
 router.post("/register", async (req, res, next) => {
   try {
@@ -44,6 +94,38 @@ router.post("/register", async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: Log in and receive a JWT token
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: john@example.com
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 example: secret123
+ *     responses:
+ *       200:
+ *         description: Login successful, returns JWT token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LoginResponse'
+ *       400:
+ *         description: Invalid email or password
+ */
 // LOGIN
 router.post("/login", async (req, res, next) => {
   try {
@@ -94,6 +176,33 @@ router.post("/login", async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /auth/users:
+ *   get:
+ *     summary: List all users (for assignee pickers)
+ *     description: Requires authentication.
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of users
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Not authenticated
+ */
 // LIST USERS (for assignee pickers)
 router.get("/users", protect, async (req, res, next) => {
   try {
@@ -107,6 +216,39 @@ router.get("/users", protect, async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /auth/profile:
+ *   get:
+ *     summary: Get the current authenticated user profile
+ *     description: Requires authentication.
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Profile of the authenticated user
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     message:
+ *                       type: string
+ *                       example: You accessed a protected route!
+ *                     user:
+ *                       $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Not authenticated
+ *       404:
+ *         description: User not found
+ */
 // PROTECTED PROFILE ROUTE
 router.get("/profile", protect, async (req, res, next) => {
   try {
