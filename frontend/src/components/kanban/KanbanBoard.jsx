@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd'
+import { motion } from 'framer-motion'
 import { Toaster, toast } from 'react-hot-toast'
 import { createTask, deleteTask, getTasks, updateTask, updateTaskStatus } from '../../api/taskApi'
 import TaskCard from './TaskCard'
@@ -14,6 +15,13 @@ const columns = [
   { id: 'In Progress', title: 'In Progress' },
   { id: 'Done', title: 'Done' },
 ]
+
+const cardListVariants = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.1 },
+  },
+}
 
 function KanbanBoard() {
   const { id: projectId } = useParams()
@@ -219,7 +227,12 @@ function KanbanBoard() {
                           <span className="kanban-count">{columnTasks.length}</span>
                         </div>
 
-                        <div className="kanban-card-list">
+                        <motion.div
+                          className="kanban-card-list"
+                          variants={cardListVariants}
+                          initial="hidden"
+                          animate="visible"
+                        >
                           {columnTasks.length > 0 ? (
                             columnTasks.map((task, index) => (
                               <Draggable key={task._id} draggableId={String(task._id)} index={index}>
@@ -237,7 +250,7 @@ function KanbanBoard() {
                             <p className="kanban-empty-state">No tasks in this column.</p>
                           )}
                           {provided.placeholder}
-                        </div>
+                        </motion.div>
                       </div>
                     )}
                   </Droppable>
