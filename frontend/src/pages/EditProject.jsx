@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { toast, Toaster } from 'react-hot-toast'
 import Layout from '../components/Layout'
 import PageTransition from '../components/PageTransition'
@@ -135,13 +136,15 @@ function EditProject() {
               </div>
 
               <div className="form-actions">
-                <button
+                <motion.button
                   className="primary-btn"
                   type="submit"
                   disabled={isSubmitting}
+                  whileTap={{ scale: 0.97 }}
+                  transition={{ duration: 0.1 }}
                 >
                   {isSubmitting ? 'Updating...' : 'Update Project'}
-                </button>
+                </motion.button>
 
                 <button
                   className="delete-btn"

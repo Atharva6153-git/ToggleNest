@@ -199,9 +199,15 @@ function KanbanBoard() {
             <h1 className="kanban-title">Kanban Board</h1>
             {projectName && <span className="kanban-project-name">{projectName}</span>}
           </div>
-          <button type="button" className="kanban-button" onClick={() => setIsModalOpen(true)}>
+          <motion.button
+            type="button"
+            className="kanban-button"
+            onClick={() => setIsModalOpen(true)}
+            whileTap={{ scale: 0.97 }}
+            transition={{ duration: 0.1 }}
+          >
             + Add Task
-          </button>
+          </motion.button>
         </header>
 
         {loading ? (

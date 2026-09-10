@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { toast, Toaster } from 'react-hot-toast'
 import Layout from '../components/Layout'
 import PageTransition from '../components/PageTransition'
@@ -82,13 +83,15 @@ function CreateProject() {
               </div>
 
               <div className="form-actions">
-                <button
+                <motion.button
                   className="primary-btn"
                   type="submit"
                   disabled={isSubmitting}
+                  whileTap={{ scale: 0.97 }}
+                  transition={{ duration: 0.1 }}
                 >
                   {isSubmitting ? 'Creating...' : 'Create Project'}
-                </button>
+                </motion.button>
 
                 <button
                   className="secondary-btn"

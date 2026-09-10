@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
 import UserSelector from './UserSelector'
 
 const emptyForm = {
@@ -100,9 +101,15 @@ function TaskFormModal({ isOpen, isSubmitting, onClose, onSubmit }) {
             <button type="button" className="secondary-button" onClick={onClose}>
               Cancel
             </button>
-            <button type="submit" className="kanban-button" disabled={isSubmitting}>
+            <motion.button
+              type="submit"
+              className="kanban-button"
+              disabled={isSubmitting}
+              whileTap={{ scale: 0.97 }}
+              transition={{ duration: 0.1 }}
+            >
               {isSubmitting ? 'Creating...' : 'Create Task'}
-            </button>
+            </motion.button>
           </div>
         </form>
       </div>
