@@ -30,7 +30,7 @@ function CreateProject() {
         deadline: new Date(`${deadline}T00:00:00`).toISOString(),
       })
       toast.success('Project created successfully!')
-      navigate('/')
+      navigate('/projects')
     } catch (err) {
       toast.error(err?.response?.data?.message || 'Could not create the project.')
     } finally {
@@ -96,7 +96,7 @@ function CreateProject() {
                 <button
                   className="secondary-btn"
                   type="button"
-                  onClick={() => navigate('/')}
+                  onClick={() => navigate('/projects')}
                 >
                   Cancel
                 </button>
