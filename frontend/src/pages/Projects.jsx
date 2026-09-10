@@ -1,8 +1,21 @@
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
 import Layout from '../components/Layout'
 import PageTransition from '../components/PageTransition'
 import { getProjects } from '../api/projectApi'
+
+const gridVariants = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.1 },
+  },
+}
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 15 },
+  visible: { opacity: 1, y: 0 },
+}
 
 const Projects = () => {
   const navigate = useNavigate()
@@ -59,9 +72,20 @@ const Projects = () => {
             <p>Create your first project to get started.</p>
           </div>
         ) : (
-          <div className="projects-grid">
+          <motion.div
+            className="projects-grid"
+            variants={gridVariants}
+            initial="hidden"
+            animate="visible"
+          >
             {projects.map((project) => (
-              <div className="project-card" key={project._id}>
+              <motion.div
+                className="project-card"
+                key={project._id}
+                variants={cardVariants}
+                whileHover={{ y: -6, scale: 1.01 }}
+                transition={{ duration: 0.4, ease: 'easeOut' }}
+              >
                 <div className="project-card-top">
                   <span className="status-badge">Active</span>
                   <span className="project-id">
@@ -98,9 +122,9 @@ const Projects = () => {
                     Manage
                   </button>
                 </div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
         </div>
       </PageTransition>

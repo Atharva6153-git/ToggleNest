@@ -751,8 +751,10 @@
 
 .kanban-card.is-dragging {
   box-shadow: var(--shadow-lg);
+}
+
+.kanban-card-drag-wrap.is-dragging {
   opacity: 0.85;
-  transform: rotate(2deg) scale(1.03);
 }
 
 .kanban-card.priority-border-low {

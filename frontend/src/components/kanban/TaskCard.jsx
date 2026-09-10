@@ -1,3 +1,5 @@
+import { motion } from 'framer-motion'
+
 function formatDate(dateValue) {
   if (!dateValue) return 'No due date'
 
@@ -18,6 +20,11 @@ function getPriorityClass(priority = 'Medium') {
   return `priority-${String(priority).toLowerCase()}`
 }
 
+const cardVariants = {
+  hidden: { opacity: 0, y: 15 },
+  visible: { opacity: 1, y: 0 },
+}
+
 function TaskCard({ task, onClick, provided, snapshot }) {
   const assigneeName = task?.assignedTo?.name || task?.assignedTo || 'Unassigned'
   const dueDate = formatDate(task?.dueDate)
@@ -26,14 +33,20 @@ function TaskCard({ task, onClick, provided, snapshot }) {
 
   return (
     <article
-      className={`kanban-card ${priorityBorderClass} ${snapshot?.isDragging ? 'is-dragging' : ''}`}
-      onClick={onClick}
-      role="button"
-      tabIndex={0}
+      className={snapshot?.isDragging ? 'kanban-card-drag-wrap is-dragging' : 'kanban-card-drag-wrap'}
       ref={provided?.innerRef}
       {...provided?.dragHandleProps}
       {...provided?.draggableProps}
     >
+      <motion.div
+        className={`kanban-card ${priorityBorderClass} ${snapshot?.isDragging ? 'is-dragging' : ''}`}
+        onClick={onClick}
+        role="button"
+        tabIndex={0}
+        variants={cardVariants}
+        whileHover={snapshot?.isDragging ? undefined : { y: -6, scale: 1.01 }}
+        transition={{ duration: 0.4, ease: 'easeOut' }}
+      >
       <div className="kanban-card-header">
         <h3 className="kanban-task-title">{task?.title || 'Untitled task'}</h3>
         <span className={`priority-badge ${getPriorityClass(priorityLabel)}`}>
@@ -49,6 +62,7 @@ function TaskCard({ task, onClick, provided, snapshot }) {
           <strong>Assignee:</strong> {assigneeName}
         </span>
       </div>
+      </motion.div>
     </article>
   )
 }
