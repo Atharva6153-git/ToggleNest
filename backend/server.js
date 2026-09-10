@@ -6,6 +6,8 @@ const rateLimit = require('express-rate-limit');
 const morgan = require('morgan');
 const helmet = require('helmet');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
 
 const app = express();
 
@@ -52,6 +54,13 @@ app.use('/api/dashboard', dashboardRoutes);
 // Notification routes
 const notificationRoutes = require('./routes/notificationRoutes');
 app.use('/api/notifications', notificationRoutes);
+
+// Swagger documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  swaggerOptions: {
+    persistAuthorization: true,
+  },
+}));
 
 app.use(notFound);
 app.use(errorHandler);

@@ -21,7 +21,7 @@
 .brand {
   font-size: 20px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--brand);
   padding: 0 12px 24px;
   letter-spacing: 0.02em;
 }
@@ -46,6 +46,12 @@
 .sidebar-nav button:hover {
   background: rgba(255, 255, 255, 0.08);
   color: #ffffff;
+}
+
+.sidebar-nav button.active {
+  background: var(--brand-soft);
+  color: var(--brand);
+  font-weight: 600;
 }
 
 .main-content {
