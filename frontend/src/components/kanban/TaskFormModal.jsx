@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import UserSelector from './UserSelector'
 
 const emptyForm = {
@@ -18,8 +18,6 @@ function TaskFormModal({ isOpen, isSubmitting, onClose, onSubmit }) {
       setForm(emptyForm)
     }
   }, [isOpen])
-
-  if (!isOpen) return null
 
   const updateField = (field) => (event) => {
     const value = event.target.value
@@ -48,8 +46,24 @@ function TaskFormModal({ isOpen, isSubmitting, onClose, onSubmit }) {
   }
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-panel" onClick={(event) => event.stopPropagation()}>
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          className="modal-backdrop"
+          onClick={onClose}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
+        >
+          <motion.div
+            className="modal-panel"
+            onClick={(event) => event.stopPropagation()}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+          >
         <div className="modal-header">
           <h2>Create Task</h2>
           <button type="button" className="close-button" onClick={onClose} aria-label="Close form">
@@ -112,8 +126,10 @@ function TaskFormModal({ isOpen, isSubmitting, onClose, onSubmit }) {
             </motion.button>
           </div>
         </form>
-      </div>
-    </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   )
 }
 
