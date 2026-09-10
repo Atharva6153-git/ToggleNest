@@ -54,12 +54,14 @@ const Projects = () => {
             <p>Organize, manage and keep track of your work.</p>
           </div>
 
-          <button
+          <motion.button
             className="create-btn"
             onClick={() => navigate('/projects/create')}
+            whileTap={{ scale: 0.97 }}
+            transition={{ duration: 0.1 }}
           >
             + Create Project
-          </button>
+          </motion.button>
         </div>
 
         {loading ? (
@@ -113,14 +115,16 @@ const Projects = () => {
                     Open Board →
                   </button>
 
-                  <button
+                  <motion.button
                     className="secondary-btn"
                     onClick={() =>
                       navigate(`/projects/edit/${project._id}`)
                     }
+                    whileTap={{ scale: 0.97 }}
+                    transition={{ duration: 0.1 }}
                   >
                     Manage
-                  </button>
+                  </motion.button>
                 </div>
               </motion.div>
             ))}
