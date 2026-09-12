@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { motion, useAnimationControls } from 'framer-motion'
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react'
 import PageTransition from '../components/PageTransition'
+import SocialAuthButtons from '../components/SocialAuthButtons'
 import { login } from '../api/authApi'
 
 function Login() {
@@ -53,6 +54,8 @@ function Login() {
           <p className="auth-subtitle">Organize your work, one board at a time.</p>
 
           {error && <p className="auth-error">{error}</p>}
+
+          <SocialAuthButtons />
 
           <form onSubmit={handleSubmit} noValidate>
             <div className="auth-field">

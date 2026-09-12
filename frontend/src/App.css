@@ -900,6 +900,8 @@
 
 .auth-submit {
   width: 100%;
+  display: block;
+  text-align: center;
   padding: 12px 20px;
   margin-top: 24px;
 }
@@ -915,6 +917,71 @@
 .auth-terms a {
   color: var(--text-muted);
   text-decoration: underline;
+}
+
+/* Social auth */
+
+.auth-social {
+  margin-bottom: 6px;
+}
+
+.auth-social-buttons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.auth-social-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 11px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.auth-social-btn:hover {
+  background: var(--surface-hover);
+  border-color: var(--text-muted);
+}
+
+.auth-social-btn svg {
+  flex-shrink: 0;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 22px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+@media (max-width: 420px) {
+  .auth-social-buttons {
+    flex-direction: column;
+  }
 }
 
 /* Kanban */
