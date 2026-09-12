@@ -1,11 +1,6 @@
-import { lazy, Suspense, useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, useScroll, useMotionValueEvent } from 'framer-motion'
-
-const Spline = lazy(() => import('@splinetool/react-spline'))
-
-const SPLINE_SCENE = 'https://prod.spline.design/o3cDynVxT4Qh3GdB/scene.splinecode'
-const SPLINE_ZOOM = 1.0
 
 const heroWords = ['Organize', 'your', 'work,', 'ship', 'together.']
 
@@ -57,15 +52,6 @@ function LandingPage() {
   const [scrolled, setScrolled] = useState(false)
   const { scrollY } = useScroll()
   useMotionValueEvent(scrollY, 'change', (y) => setScrolled(y > 16))
-
-  const handleSplineLoad = (splineApp) => {
-    try {
-      splineApp._renderer?.pipeline?.setWatermark?.(null)
-    } catch {}
-    try {
-      splineApp.setZoom?.(SPLINE_ZOOM)
-    } catch {}
-  }
 
   return (
     <div className="landing-page">
@@ -160,20 +146,6 @@ function LandingPage() {
               </motion.span>
             </div>
           </div>
-
-          <motion.div
-            className="landing-hero-visual"
-            aria-hidden="true"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.5, ease: 'easeOut' }}
-          >
-            <Suspense fallback={<div className="spline-fallback" />}>
-              <div className="landing-spline">
-                <Spline scene={SPLINE_SCENE} onSplineLoad={handleSplineLoad} />
-              </div>
-            </Suspense>
-          </motion.div>
         </div>
 
         <div className="landing-divider" aria-hidden="true" />

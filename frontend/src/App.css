@@ -1413,9 +1413,8 @@
 .landing-hero-inner {
   position: relative;
   z-index: 2;
-  display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
-  gap: 64px;
+  display: flex;
+  flex-direction: column;
   align-items: center;
   width: 100%;
   max-width: 1240px;
@@ -1423,7 +1422,11 @@
 }
 
 .landing-hero-content {
-  text-align: left;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 760px;
 }
 
 .landing-badge {
@@ -1524,32 +1527,6 @@
 
 .landing-login-link:hover {
   color: var(--lp-text);
-}
-
-.landing-hero-visual {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 520px;
-  border-radius: 26px;
-  overflow: hidden;
-  background: radial-gradient(circle at 50% 45%, var(--lp-accent-soft), transparent 68%);
-}
-
-.landing-spline {
-  width: min(100%, 480px);
-  height: min(100%, 480px);
-  opacity: 0.75;
-  pointer-events: none;
-  transform: scale(0.85);
-}
-
-.spline-fallback {
-  width: 100%;
-  height: 100%;
-  border-radius: inherit;
-  background: radial-gradient(circle at 50% 45%, var(--lp-accent-soft), transparent 68%);
 }
 
 .landing-divider {
@@ -1675,17 +1652,6 @@
     justify-content: center;
     flex-direction: column;
     gap: 18px;
-  }
-
-  .landing-hero-visual {
-    height: 320px;
-  }
-
-  .landing-spline {
-    width: 100%;
-    height: 100%;
-    max-width: 260px;
-    max-height: 260px;
   }
 
   .landing-divider {
