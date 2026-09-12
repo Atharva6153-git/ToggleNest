@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { cva } from 'class-variance-authority'
 import { useNavigate } from 'react-router-dom'
+import { RadialBackground } from './RadialBackground'
+import ThemeToggleButton from './ThemeToggleButton'
 
 const cn = (...inputs) => inputs.filter(Boolean).join(' ')
 
@@ -105,6 +107,8 @@ const Navigation = ({ brand = 'ToggleNest', onSignIn }) => {
                 </a>
               ))}
 
+              <ThemeToggleButton />
+
               <Button size="sm" variant="default" onClick={() => onSignIn?.()}>
                 Sign In
               </Button>
@@ -112,6 +116,8 @@ const Navigation = ({ brand = 'ToggleNest', onSignIn }) => {
           </div>
 
           <div className="nl-nav-mobile">
+            <ThemeToggleButton />
+
             <Button
               size="sm"
               variant="ghost"
@@ -172,6 +178,7 @@ const Navigation = ({ brand = 'ToggleNest', onSignIn }) => {
 const Hero = ({ heroClassName, onTryForFree }) => {
   return (
     <section className="nl-hero" aria-labelledby="hero-heading">
+      <RadialBackground />
       <div className="nl-hero-inner">
         <h1 id="hero-heading" className="nl-hero-title nl-anim">
           Organize Your Work, Ship
@@ -226,7 +233,7 @@ const UnderlineHero = ({ brand = 'ToggleNest', heroClassName, onSignIn, onTryFor
   const handleTryForFree = onTryForFree ?? (() => navigate('/signup'))
 
   return (
-    <div>
+    <div className="nl-underline-hero">
       <Navigation brand={brand} onSignIn={handleSignIn} />
       <Hero heroClassName={heroClassName} onTryForFree={handleTryForFree} />
     </div>
