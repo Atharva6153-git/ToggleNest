@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { cva } from 'class-variance-authority'
 import { useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { RadialBackground } from './RadialBackground'
 import ThemeToggleButton from './ThemeToggleButton'
 
@@ -56,8 +57,16 @@ const navItems = [
 
 const Navigation = ({ brand = 'ToggleNest', onSignIn }) => {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
   const menuRef = useRef(null)
   const triggerRef = useRef(null)
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   useEffect(() => {
     if (menuOpen) {
@@ -90,7 +99,13 @@ const Navigation = ({ brand = 'ToggleNest', onSignIn }) => {
   }, [menuOpen])
 
   return (
-    <nav className="nl-nav" aria-label="Main navigation">
+    <motion.nav
+      className={cn('nl-nav', scrolled && 'nl-nav-scrolled')}
+      aria-label="Main navigation"
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
+    >
       <div className="nl-nav-inner">
         <div className="nl-nav-row">
           <div className="nl-nav-brand">
@@ -109,7 +124,12 @@ const Navigation = ({ brand = 'ToggleNest', onSignIn }) => {
 
               <ThemeToggleButton />
 
-              <Button size="sm" variant="default" onClick={() => onSignIn?.()}>
+              <Button
+                size="sm"
+                variant="default"
+                className="nl-nav-signin"
+                onClick={() => onSignIn?.()}
+              >
                 Sign In
               </Button>
             </div>
@@ -171,7 +191,7 @@ const Navigation = ({ brand = 'ToggleNest', onSignIn }) => {
           </div>
         </div>
       </div>
-    </nav>
+    </motion.nav>
   )
 }
 

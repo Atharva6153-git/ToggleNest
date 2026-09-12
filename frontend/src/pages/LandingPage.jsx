@@ -1,7 +1,9 @@
-import { useEffect } from 'react'
+import { Fragment, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { ChevronRight } from 'lucide-react'
 import UnderlineHero from '../components/UnderlineHero'
+import ScrollProgressBar from '../components/ScrollProgressBar'
 
 const featureListVariants = {
   hidden: {},
@@ -82,6 +84,7 @@ function LandingPage() {
 
   return (
     <div className="landing-page">
+      <ScrollProgressBar />
       <UnderlineHero />
 
       <section className="landing-section landing-how" id="about">
@@ -114,12 +117,20 @@ function LandingPage() {
           whileInView="visible"
           viewport={{ once: true, amount: 0.25 }}
         >
-          {steps.map((step) => (
-            <motion.div key={step.number} className="landing-step" variants={stepCardVariants}>
-              <span className="landing-step-number">{step.number}</span>
-              <h3>{step.title}</h3>
-              <p>{step.text}</p>
-            </motion.div>
+          {steps.map((step, i) => (
+            <Fragment key={step.number}>
+              <motion.div className="landing-step" variants={stepCardVariants}>
+                <span className="landing-step-number">{step.number}</span>
+                <h3>{step.title}</h3>
+                <p>{step.text}</p>
+              </motion.div>
+              {i < steps.length - 1 && (
+                <span className="landing-step-connector" aria-hidden="true">
+                  <span className="landing-step-line" />
+                  <ChevronRight size={16} strokeWidth={2.5} className="landing-step-arrow" />
+                </span>
+              )}
+            </Fragment>
           ))}
         </motion.div>
       </section>
