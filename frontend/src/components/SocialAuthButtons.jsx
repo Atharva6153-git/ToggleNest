@@ -1,4 +1,10 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { signInWithPopup } from 'firebase/auth'
+import { toast, Toaster } from 'react-hot-toast'
+import { auth, googleProvider, githubProvider } from '../firebase'
+import { firebaseLogin } from '../api/authApi'
 
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
@@ -36,37 +42,77 @@ const GitHubIcon = () => (
   </svg>
 )
 
+const firebaseProviders = {
+  google: googleProvider,
+  github: githubProvider,
+}
+
 const providers = [
-  { name: 'Google', Icon: GoogleIcon },
-  { name: 'Microsoft', Icon: MicrosoftIcon },
-  { name: 'GitHub', Icon: GitHubIcon },
+  { name: 'Google', Icon: GoogleIcon, type: 'google' },
+  { name: 'Microsoft', Icon: MicrosoftIcon, type: 'placeholder' },
+  { name: 'GitHub', Icon: GitHubIcon, type: 'github' },
 ]
 
 function SocialAuthButtons() {
-  const handleClick = (name) => {
-    console.log(`${name} OAuth not yet implemented`)
+  const navigate = useNavigate()
+  const [loading, setLoading] = useState(null)
+
+  const signInWithFirebase = async (providerName) => {
+    setLoading(providerName)
+    try {
+      const result = await signInWithPopup(auth, firebaseProviders[providerName])
+      const idToken = await result.user.getIdToken()
+      await firebaseLogin(idToken)
+      toast.success(`Signed in with ${providerName}`)
+      navigate('/dashboard')
+    } catch (err) {
+      const closed = ['auth/popup-closed-by-user', 'auth/cancelled-popup-request']
+      if (closed.includes(err?.code)) {
+        toast('Sign-in popup was closed.')
+      } else if (err?.code === 'auth/account-exists-with-different-credential') {
+        toast.error('An account with this email already exists. Try a different sign-in method.')
+      } else {
+        toast.error(
+          err?.response?.data?.message ||
+            err?.message ||
+            'Could not sign in. Please try again.'
+        )
+      }
+    } finally {
+      setLoading(null)
+    }
+  }
+
+  const handleClick = (item) => {
+    if (item.type === 'placeholder') {
+      console.log(`${item.name} OAuth not yet implemented`)
+      return
+    }
+    signInWithFirebase(item.name.toLowerCase())
   }
 
   return (
     <div className="auth-social">
       <div className="auth-social-buttons">
-        {providers.map(({ name, Icon }) => (
+        {providers.map((item) => (
           <motion.button
-            key={name}
+            key={item.name}
             type="button"
             className="auth-social-btn"
-            onClick={() => handleClick(name)}
-            whileTap={{ scale: 0.97 }}
+            onClick={() => handleClick(item)}
+            disabled={loading !== null}
+            whileTap={loading === null ? { scale: 0.97 } : undefined}
             transition={{ duration: 0.1 }}
           >
-            <Icon />
-            <span>{name}</span>
+            <item.Icon />
+            <span>{loading === item.name.toLowerCase() ? 'Signing in...' : item.name}</span>
           </motion.button>
         ))}
       </div>
       <div className="auth-divider">
         <span>OR</span>
       </div>
+      <Toaster position="top-right" />
     </div>
   )
 }

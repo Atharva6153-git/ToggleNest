@@ -1,6 +1,8 @@
 const express = require("express");
+const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { getAuth, getApps } = require("../config/firebaseAdmin");
 const User = require("../models/User");
 const protect = require("../middleware/authMiddleware");
 
@@ -162,6 +164,100 @@ router.post("/login", async (req, res, next) => {
       success: true,
       data: {
         message: "Login successful",
+        token,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+/**
+ * @swagger
+ * /auth/firebase-login:
+ *   post:
+ *     summary: Verify a Firebase ID token and issue an app JWT
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [idToken]
+ *             properties:
+ *               idToken:
+ *                 type: string
+ *                 description: Firebase ID token from signInWithPopup (Google/GitHub)
+ *     responses:
+ *       200:
+ *         description: Login successful, returns an app JWT
+ *       400:
+ *         description: Missing idToken
+ *       401:
+ *         description: Invalid or expired Firebase ID token
+ */
+// FIREBASE LOGIN (Google / GitHub via Firebase)
+router.post("/firebase-login", async (req, res, next) => {
+  try {
+    const { idToken } = req.body;
+
+    if (!idToken) {
+      const error = new Error("Missing idToken in request body");
+      error.statusCode = 400;
+      return next(error);
+    }
+
+    if (!getApps().length) {
+      const error = new Error(
+        "Firebase login is not configured on the server. The service account file is missing."
+      );
+      error.statusCode = 500;
+      return next(error);
+    }
+
+    const decodedToken = await getAuth().verifyIdToken(idToken);
+
+    const email = (decodedToken.email || "").toLowerCase();
+    const name = decodedToken.name || email.split("@")[0];
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      const randomPassword = crypto.randomBytes(24).toString("hex");
+      const hashedPassword = await bcrypt.hash(randomPassword, 10);
+
+      user = new User({
+        name,
+        email,
+        password: hashedPassword,
+        role: "member",
+      });
+
+      await user.save();
+    }
+
+    const token = jwt.sign(
+      {
+        userId: user._id,
+        role: user.role,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1d",
+      }
+    );
+
+    return res.json({
+      success: true,
+      data: {
+        message: "Firebase login successful",
         token,
         user: {
           id: user._id,
