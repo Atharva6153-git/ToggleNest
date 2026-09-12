@@ -13,6 +13,14 @@ export const login = async (credentials) => {
   return response.data.data
 }
 
+export const firebaseLogin = async (idToken) => {
+  const response = await axiosInstance.post('/auth/firebase-login', { idToken })
+  const { token, user } = response.data.data
+  localStorage.setItem(TOKEN_KEY, token)
+  localStorage.setItem('user', JSON.stringify(user))
+  return response.data.data
+}
+
 export const getUsers = async () => {
   const response = await axiosInstance.get('/auth/users')
   return response.data.data
