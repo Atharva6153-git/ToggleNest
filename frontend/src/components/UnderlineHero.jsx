@@ -172,6 +172,11 @@ const Navigation = ({ brand = 'ToggleNest', onSignIn }) => {
 const Hero = ({ heroClassName, onTryForFree }) => {
   return (
     <section className="nl-hero" aria-labelledby="hero-heading">
+      <div className="nlg-glow nlg-glow-1" aria-hidden="true" />
+      <div className="nlg-glow nlg-glow-2" aria-hidden="true" />
+      <div className="nlg-glow nlg-glow-3" aria-hidden="true" />
+      <div className="nlg-noise" aria-hidden="true" />
+      <div className="nlg-vignette" aria-hidden="true" />
       <div className="nl-hero-inner">
         <h1 id="hero-heading" className="nl-hero-title nl-anim">
           Organize Your Work, Ship
@@ -226,7 +231,7 @@ const UnderlineHero = ({ brand = 'ToggleNest', heroClassName, onSignIn, onTryFor
   const handleTryForFree = onTryForFree ?? (() => navigate('/signup'))
 
   return (
-    <div>
+    <div className="nl-underline-hero">
       <Navigation brand={brand} onSignIn={handleSignIn} />
       <Hero heroClassName={heroClassName} onTryForFree={handleTryForFree} />
     </div>
