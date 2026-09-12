@@ -10,6 +10,7 @@ import TaskDetailsModal from './TaskDetailsModal'
 import TaskFormModal from './TaskFormModal'
 import PageTransition from '../PageTransition'
 import { getProject } from '../../api/projectApi'
+import ThemeToggleButton from '../ThemeToggleButton'
 
 const columns = [
   { id: 'To-Do', title: 'To-Do' },
@@ -200,15 +201,18 @@ function KanbanBoard() {
             <h1 className="kanban-title">Kanban Board</h1>
             {projectName && <span className="kanban-project-name">{projectName}</span>}
           </div>
-          <motion.button
-            type="button"
-            className="kanban-button"
-            onClick={() => setIsModalOpen(true)}
-            whileTap={{ scale: 0.97 }}
-            transition={{ duration: 0.1 }}
-          >
-            + Add Task
-          </motion.button>
+          <div className="kanban-header-actions">
+            <ThemeToggleButton />
+            <motion.button
+              type="button"
+              className="kanban-button"
+              onClick={() => setIsModalOpen(true)}
+              whileTap={{ scale: 0.97 }}
+              transition={{ duration: 0.1 }}
+            >
+              + Add Task
+            </motion.button>
+          </div>
         </header>
 
         {loading ? (

@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { logout } from '../api/authApi'
 import NotificationBell from './NotificationBell'
+import ThemeToggleButton from './ThemeToggleButton'
 
 function Layout({ children }) {
   const navigate = useNavigate()
@@ -39,6 +40,7 @@ function Layout({ children }) {
           </div>
 
           <div className="topbar-actions">
+            <ThemeToggleButton />
             <NotificationBell />
             <span className="profile-circle">{initial}</span>
             <button className="logout-btn" onClick={handleLogout}>
