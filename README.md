@@ -1,50 +1,41 @@
 # ToggleNest
 
-ToggleNest is a team task and workflow management platform built with the MERN stack. It provides project organization, Kanban-style task tracking, team collaboration tools, and real-time activity monitoring.
+ToggleNest is a team task and workflow management platform built with the MERN stack. It provides a Kanban-style board, role-based access control (admin/member), Google and GitHub single sign-on, and real-time activity monitoring.
 
-## Project Overview
+## Features
 
-### What It Does
+- **Authentication:** Email/password signup and login, plus Google and GitHub OAuth via Firebase
+- **Role-based access control:** Admin and member permissions
+- **Project CRUD:** Create, read, update, and delete projects, with member assignment
+- **Kanban board:** Drag-and-drop task management across status columns
+- **Task management:** Assign tasks to members, set priority levels and due dates
+- **Activity logging:** Track task and project events
+- **Notifications:** In-app alerts for task assignment and status changes
+- **Dashboard:** Completion tracking and stats grouped by status and priority
+- **UI:** Fully responsive design with a dark theme
 
-ToggleNest helps teams manage project work through an intuitive interface with role-based access, drag-and-drop task boards, and comprehensive activity tracking.
+## Tech Stack
 
-### Tech Stack
-
-- **Frontend:** React + Vite
-- **Backend:** Node.js + Express
-- **Database:** MongoDB + Mongoose
-- **Auth:** JWT with role-based access control (admin / member)
-
-### Current Feature Status
-
-| Feature | Status |
+| Layer | Technology |
 |---|---|
-| Authentication & role-based access (admin/member) | Done |
-| Project CRUD | Done |
-| Kanban board with drag-and-drop | Done |
-| Task assignment & status tracking | Done |
-| Activity logging for task events | Done |
-| Dashboard with completion metrics (by status & priority) | Done |
-| Notification system | Done |
-| Project-level member access control | In progress |
+| Frontend | React + Vite, Tailwind CSS, Framer Motion |
+| Backend | Node.js + Express |
+| Database | MongoDB + Mongoose |
+| Auth | Firebase Authentication (Google/GitHub OAuth) + JWT |
+| Security & Validation | Helmet, express-rate-limit, express-validator |
+| Logging | Morgan |
 
-> **Note:** Project-level member access control is still being refined. Currently all authenticated users can access all projects; fine-grained per-project permissions are planned.
+## Planned / In Progress
+
+- **Microsoft OAuth** — planned, not yet implemented.
+
+> **Note:** Role-based access and project-level member assignment are in place; fine-grained per-project permissions are still being refined.
 
 ## Backend API
 
 For backend setup and API documentation, see the backend README:
 
 - [backend/README.md](backend/README.md)
-
-## Tech Stack
-
-- Frontend: React + Vite
-- Backend: Node.js + Express
-- Database: MongoDB + Mongoose
-- Authentication: JWT
-- Validation: express-validator
-- Security: Helmet, express-rate-limit
-- Logging: Morgan
 
 ## Backend API Endpoints
 
@@ -376,14 +367,18 @@ Typical HTTP statuses:
 ## Local Setup Instructions
 
 ### 1. Install dependencies
-Open a terminal in the project root and run:
+
+Install dependencies for both backend and frontend:
 
 ```bash
 cd backend
 npm install
+cd ../frontend
+npm install
 ```
 
-### 2. Set environment variables
+### 2. Set backend environment variables
+
 Create a `.env` file inside the `backend` folder with:
 
 ```env
@@ -391,29 +386,46 @@ PORT=5000
 MONGO_URI=mongodb://localhost:27017/togglenest
 JWT_SECRET=your_super_secret_key
 NODE_ENV=development
+FIREBASE_SERVICE_ACCOUNT_PATH=./config/firebase-service-account.json
 ```
 
+Required variables:
+- `PORT` - port for the backend server
+- `MONGO_URI` - MongoDB connection string
+- `JWT_SECRET` - secret used to sign JWT tokens
+- `FIREBASE_SERVICE_ACCOUNT_PATH` - path to the Firebase Admin SDK service account JSON (see note below)
+- `NODE_ENV` - optional, typically `development` or `production`
+
+> **Firebase service account:** `FIREBASE_SERVICE_ACCOUNT_PATH` points to the Firebase Admin SDK service account JSON used to verify Google/GitHub login tokens. This file is **gitignored** and must be added manually — never commit it. Download it from Firebase Console > Project settings > Service accounts > Generate new private key, then save it where your `.env` entry points (e.g. `backend/config/firebase-service-account.json`).
+
 ### 3. Start MongoDB
+
 Make sure MongoDB is running locally on your machine or use a MongoDB connection URI pointing to a remote cluster.
 
 ### 4. Run the backend
-```bash
-cd backend
-npm start
-```
-
-For development with auto-restart:
 
 ```bash
 cd backend
 npm run dev
 ```
 
-The backend should run at:
+For production-style runs:
 
-```text
-http://localhost:5000
+```bash
+cd backend
+npm start
 ```
+
+The backend should run at `http://localhost:5000`.
+
+### 5. Run the frontend
+
+```bash
+cd frontend
+npm run dev
+```
+
+The frontend should run at `http://localhost:5173`.
 
 ## Notes
 
