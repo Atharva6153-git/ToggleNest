@@ -900,6 +900,8 @@
 
 .auth-submit {
   width: 100%;
+  display: block;
+  text-align: center;
   padding: 12px 20px;
   margin-top: 24px;
 }

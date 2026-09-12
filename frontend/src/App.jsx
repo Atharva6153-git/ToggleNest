@@ -2,6 +2,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import OAuthSuccess from './pages/OAuthSuccess'
 import LandingPage from './pages/LandingPage'
 import Projects from './pages/Projects'
 import CreateProject from './pages/CreateProject'
@@ -20,6 +21,7 @@ function App() {
       <Routes location={location} key={location.pathname}>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/oauth-success" element={<OAuthSuccess />} />
 
       <Route
         path="/"

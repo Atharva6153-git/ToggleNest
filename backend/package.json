@@ -23,6 +23,8 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.9.2",
     "morgan": "^1.12.0",
+    "passport-github2": "^0.1.12",
+    "passport-microsoft": "^2.1.0",
     "swagger-jsdoc": "^6.3.0",
     "swagger-ui-express": "^5.0.1"
   },
