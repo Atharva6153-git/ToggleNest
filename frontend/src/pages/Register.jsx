@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence, useAnimationControls } from 'framer-motion'
 import { Check } from 'lucide-react'
 import PageTransition from '../components/PageTransition'
+import SocialAuthButtons from '../components/SocialAuthButtons'
 import { register, login } from '../api/authApi'
 
 const stepVariants = {
@@ -149,6 +150,8 @@ function Register() {
                   exit="exit"
                   transition={{ duration: 0.3, ease: 'easeOut' }}
                 >
+                  <SocialAuthButtons />
+
                   <div className="form-group">
                     <input
                       id="register-name"
