@@ -1350,6 +1350,82 @@
   line-height: 1.65;
 }
 
+.landing-how-head {
+  max-width: 640px;
+  margin-bottom: 56px;
+}
+
+.landing-how-head .landing-section-heading {
+  margin-bottom: 12px;
+}
+
+.landing-how-subtitle {
+  color: var(--text-muted);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.landing-steps {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+}
+
+.landing-step {
+  position: relative;
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--surface) 55%, transparent),
+    color-mix(in srgb, var(--surface) 22%, transparent)
+  );
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 36px 32px;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  transition: border-color 0.3s;
+}
+
+.landing-step:hover {
+  border-color: var(--accent);
+}
+
+.landing-step-number {
+  display: block;
+  font-size: clamp(42px, 5vw, 58px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--accent);
+  opacity: 0.9;
+  margin-bottom: 22px;
+}
+
+.landing-step h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.landing-step p {
+  color: var(--text-muted);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.landing-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 55px;
+  right: -8px;
+  width: 12px;
+  height: 12px;
+  border-top: 2px solid var(--accent);
+  border-right: 2px solid var(--accent);
+  opacity: 0.8;
+}
+
 .landing-footer {
   text-align: center;
   padding: 28px;
@@ -1373,6 +1449,22 @@
   .landing-features {
     grid-template-columns: 1fr;
     gap: 22px;
+  }
+
+  .landing-how-head {
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 40px;
+  }
+
+  .landing-steps {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+
+  .landing-step:not(:last-child)::after {
+    display: none;
   }
 }
 
@@ -1703,6 +1795,7 @@
   color: var(--accent);
 }
 
+#about,
 #features {
   scroll-margin-top: 80px;
 }
