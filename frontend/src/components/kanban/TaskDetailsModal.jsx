@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import UserSelector from './UserSelector'
+import { useAuth } from '../../context/AuthContext'
 
 function getAssignedUserValue(assignedTo) {
   if (!assignedTo) return ''
@@ -12,6 +13,7 @@ function getAssignedUserValue(assignedTo) {
 }
 
 function TaskDetailsModal({ task, isOpen, isSubmitting, onClose, onSubmit, onDelete }) {
+  const { isAdmin } = useAuth()
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -135,9 +137,11 @@ function TaskDetailsModal({ task, isOpen, isSubmitting, onClose, onSubmit, onDel
           </div>
 
           <div className="modal-actions">
-            <button type="button" className="danger-button" onClick={onDelete}>
-              Delete Task
-            </button>
+            {isAdmin && (
+              <button type="button" className="danger-button" onClick={onDelete}>
+                Delete Task
+              </button>
+            )}
             <button type="button" className="secondary-button" onClick={onClose}>
               Cancel
             </button>

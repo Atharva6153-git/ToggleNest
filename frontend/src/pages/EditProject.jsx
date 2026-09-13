@@ -5,10 +5,12 @@ import { toast, Toaster } from 'react-hot-toast'
 import Layout from '../components/Layout'
 import PageTransition from '../components/PageTransition'
 import { getProject, updateProject, deleteProject } from '../api/projectApi'
+import { useAuth } from '../context/AuthContext'
 
 function EditProject() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { isAdmin } = useAuth()
 
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -146,14 +148,16 @@ function EditProject() {
                   {isSubmitting ? 'Updating...' : 'Update Project'}
                 </motion.button>
 
-                <button
-                  className="delete-btn"
-                  type="button"
-                  onClick={handleDelete}
-                  disabled={isSubmitting}
-                >
-                  Delete Project
-                </button>
+                {isAdmin && (
+                  <button
+                    className="delete-btn"
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={isSubmitting}
+                  >
+                    Delete Project
+                  </button>
+                )}
 
                 <button
                   className="secondary-btn"
