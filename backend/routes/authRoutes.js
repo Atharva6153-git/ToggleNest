@@ -9,6 +9,10 @@ const protect = require("../middleware/authMiddleware");
 const router = express.Router();
 console.log("AUTH ROUTES FILE LOADED");
 
+const getNormalizedEmail = (value) => (
+  typeof value === "string" ? value.trim().toLowerCase() : ""
+);
+
 router.get("/test", (req, res) => {
   res.send("Auth route is working!");
 });
@@ -66,9 +70,16 @@ router.get("/test", (req, res) => {
 // REGISTER
 router.post("/register", async (req, res, next) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, password } = req.body;
+    const email = getNormalizedEmail(req.body?.email);
 
-    const existingUser = await User.findOne({ email });
+    if (!email) {
+      const error = new Error("Invalid email");
+      error.statusCode = 400;
+      return next(error);
+    }
+
+    const existingUser = await User.findOne({ email: { $eq: email } });
 
     if (existingUser) {
       const error = new Error("User already exists");
@@ -131,9 +142,16 @@ router.post("/register", async (req, res, next) => {
 // LOGIN
 router.post("/login", async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { password } = req.body;
+    const email = getNormalizedEmail(req.body?.email);
 
-    const user = await User.findOne({ email });
+    if (!email) {
+      const error = new Error("Invalid email or password");
+      error.statusCode = 400;
+      return next(error);
+    }
+
+    const user = await User.findOne({ email: { $eq: email } });
 
     if (!user) {
       const error = new Error("Invalid email or password");
