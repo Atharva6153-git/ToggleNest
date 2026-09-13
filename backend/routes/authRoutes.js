@@ -41,7 +41,7 @@ router.get("/test", (req, res) => {
  *               role:
  *                 type: string
  *                 enum: [admin, member]
- *                 description: Optional, defaults to "member"
+ *                 description: Ignored — new users are always created as "member". Admin roles cannot be self-assigned at registration.
  *                 example: member
  *     responses:
  *       201:
@@ -66,7 +66,7 @@ router.get("/test", (req, res) => {
 // REGISTER
 router.post("/register", async (req, res, next) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password } = req.body;
 
     const existingUser = await User.findOne({ email });
 
@@ -82,7 +82,7 @@ router.post("/register", async (req, res, next) => {
       name,
       email,
       password: hashedPassword,
-      role: role || "member",
+      role: "member",
     });
 
     await user.save();
@@ -361,6 +361,72 @@ router.get("/profile", protect, async (req, res, next) => {
       data: {
         message: "You accessed a protected route!",
         user,
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+/**
+ * @swagger
+ * /auth/me:
+ *   get:
+ *     summary: Get the current authenticated user from the database (fresh role lookup)
+ *     description: >-
+ *       Returns the CURRENT user record from MongoDB (name, email, role).
+ *       The role comes from a fresh database lookup every time — NOT from the JWT
+ *       payload — so frontends can rely on this as the source of truth for roles.
+ *       Requires authentication.
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Current user fetched from the database
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     name:
+ *                       type: string
+ *                     email:
+ *                       type: string
+ *                     role:
+ *                       type: string
+ *                       enum: [admin, member]
+ *       401:
+ *         description: Not authenticated
+ *       404:
+ *         description: User not found
+ */
+// CURRENT USER (fresh DB lookup — source of truth for the role)
+router.get('/me', protect, async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.userId).select('name email role');
+
+    if (!user) {
+      const error = new Error('User not found');
+      error.statusCode = 404;
+      return next(error);
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
       },
     });
   } catch (error) {

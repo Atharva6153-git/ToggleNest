@@ -16,6 +16,7 @@ const projectController = require('../controllers/projectController');
  * /projects:
  *   post:
  *     summary: Create a new project
+ *     description: Admin role required. Requires authentication.
  *     tags: [Projects]
  *     security:
  *       - bearerAuth: []
@@ -59,7 +60,7 @@ const projectController = require('../controllers/projectController');
  *       401:
  *         description: Not authenticated
  */
-router.post('/', auth, projectController.createProject);
+router.post('/', auth, roleMiddleware('admin'), projectController.createProject);
 
 /**
  * @swagger

@@ -21,6 +21,11 @@ export const firebaseLogin = async (idToken) => {
   return response.data.data
 }
 
+export const getMe = async () => {
+  const response = await axiosInstance.get('/auth/me')
+  return response.data.data
+}
+
 export const getUsers = async () => {
   const response = await axiosInstance.get('/auth/users')
   return response.data.data
