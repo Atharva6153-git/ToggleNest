@@ -8,6 +8,8 @@ const helmet = require('helmet');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
+const mongoSanitize = require('express-mongo-sanitize');
+const hpp = require('hpp');
 
 const app = express();
 
@@ -24,6 +26,13 @@ const limiter = rateLimit({
 app.use(express.json());
 app.use(cors());
 app.use(helmet());
+app.use((req, res, next) => {
+  ['body', 'params', 'query'].forEach((key) => {
+    if (req[key]) mongoSanitize.sanitize(req[key]);
+  });
+  next();
+});
+app.use(hpp());
 if (process.env.NODE_ENV !== 'production') {
   app.use(morgan('dev'));
 }
