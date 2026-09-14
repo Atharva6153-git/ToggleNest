@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const { getAuth, getApps } = require("../config/firebaseAdmin");
 const User = require("../models/User");
 const protect = require("../middleware/authMiddleware");
+const upload = require("../config/cloudinary");
 
 const router = express.Router();
 console.log("AUTH ROUTES FILE LOADED");
@@ -366,7 +367,9 @@ router.get("/users", protect, async (req, res, next) => {
 // PROTECTED PROFILE ROUTE
 router.get("/profile", protect, async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.userId).select("-password");
+    const user = await User.findById(req.user.userId).select(
+      "name email role profilePicture createdAt"
+    );
 
     if (!user) {
       const error = new Error("User not found");
@@ -385,6 +388,124 @@ router.get("/profile", protect, async (req, res, next) => {
     return next(error);
   }
 });
+
+// UPDATE PROFILE
+router.put("/profile", protect, async (req, res, next) => {
+  try {
+    const { name, password, newPassword } = req.body;
+    const user = await User.findById(req.user.userId);
+
+    if (!user) {
+      const error = new Error("User not found");
+      error.statusCode = 404;
+      return next(error);
+    }
+
+    if (name) {
+      if (typeof name !== "string" || !name.trim()) {
+        const error = new Error("Name cannot be empty");
+        error.statusCode = 400;
+        return next(error);
+      }
+      user.name = name.trim();
+    }
+
+    if (password || newPassword) {
+      const newPw = newPassword || password;
+      if (typeof newPw !== "string" || newPw.length < 6) {
+        const error = new Error("Password must be at least 6 characters");
+        error.statusCode = 400;
+        return next(error);
+      }
+      if (password && newPassword) {
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+          const error = new Error("Current password is incorrect");
+          error.statusCode = 400;
+          return next(error);
+        }
+      }
+      user.password = await bcrypt.hash(newPw, 10);
+    }
+
+    await user.save();
+
+    return res.json({
+      success: true,
+      data: {
+        message: "Profile updated successfully",
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          profilePicture: user.profilePicture,
+          createdAt: user.createdAt,
+        },
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+// UPLOAD PROFILE PICTURE
+router.post(
+  "/profile/picture",
+  protect,
+  (req, res, next) => {
+    upload.single("profilePicture")(req, res, (err) => {
+      if (err) {
+        console.error("[profile/picture][multer] error:", {
+          code: err.code,
+          message: err.message,
+          field: err.field,
+          stack: err.stack,
+        });
+        return next(err);
+      }
+      next();
+    });
+  },
+  async (req, res, next) => {
+    try {
+      console.log("[profile/picture] request inspection:", {
+        contentType: req.headers["content-type"],
+        body: req.body,
+        file: req.file
+          ? { fieldname: req.file.fieldname, mimetype: req.file.mimetype, size: req.file.size }
+          : null,
+      });
+
+      if (!req.file) {
+        const error = new Error("No file uploaded");
+        error.statusCode = 400;
+        return next(error);
+      }
+
+      const user = await User.findById(req.user.userId);
+
+      if (!user) {
+        const error = new Error("User not found");
+        error.statusCode = 404;
+        return next(error);
+      }
+
+      user.profilePicture = req.file.path;
+      await user.save();
+
+      return res.json({
+        success: true,
+        data: {
+          message: "Profile picture updated successfully",
+          profilePicture: user.profilePicture,
+        },
+      });
+    } catch (error) {
+      return next(error);
+    }
+  }
+);
 
 /**
  * @swagger
@@ -430,7 +551,7 @@ router.get("/profile", protect, async (req, res, next) => {
 // CURRENT USER (fresh DB lookup — source of truth for the role)
 router.get('/me', protect, async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.userId).select('name email role');
+    const user = await User.findById(req.user.userId).select('name email role profilePicture');
 
     if (!user) {
       const error = new Error('User not found');
@@ -445,6 +566,7 @@ router.get('/me', protect, async (req, res, next) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        profilePicture: user.profilePicture,
       },
     });
   } catch (error) {

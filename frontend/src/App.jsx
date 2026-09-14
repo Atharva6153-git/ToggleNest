@@ -10,6 +10,7 @@ import EditProject from './pages/EditProject'
 import './App.css'
 import KanbanBoardPage from './pages/KanbanBoardPage'
 import Dashboard from './pages/Dashboard'
+import Profile from './pages/Profile'
 import RequireAuth from './components/RequireAuth'
 import HomeRoute from './components/HomeRoute'
 
@@ -44,6 +45,14 @@ function App() {
         element={
           <RequireAuth>
             <Dashboard />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <RequireAuth>
+            <Profile />
           </RequireAuth>
         }
       />
