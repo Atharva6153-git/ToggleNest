@@ -45,7 +45,21 @@ function Layout({ children }) {
           <div className="topbar-actions">
             <ThemeToggleButton />
             <NotificationBell />
-            <span className="profile-circle">{initial}</span>
+            <span
+              className="profile-circle"
+              title="Profile"
+              onClick={() => navigate('/profile')}
+            >
+              {user?.profilePicture ? (
+                <img
+                  src={user.profilePicture}
+                  alt="Profile"
+                  className="profile-circle-img"
+                />
+              ) : (
+                initial
+              )}
+            </span>
             <button className="logout-btn" onClick={handleLogout}>
               Log out
             </button>

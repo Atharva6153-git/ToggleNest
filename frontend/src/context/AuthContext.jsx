@@ -28,7 +28,13 @@ export function AuthProvider({ children }) {
 
     try {
       const me = await getMe()
-      const freshUser = { id: me.id, name: me.name, email: me.email, role: me.role }
+      const freshUser = {
+        id: me.id,
+        name: me.name,
+        email: me.email,
+        role: me.role,
+        profilePicture: me.profilePicture,
+      }
       setUser(freshUser)
       localStorage.setItem(USER_KEY, JSON.stringify(freshUser))
       return freshUser

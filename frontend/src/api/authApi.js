@@ -1,3 +1,4 @@
+import axios from 'axios'
 import axiosInstance, { TOKEN_KEY } from './axiosInstance'
 
 export const register = async (userData) => {
@@ -23,6 +24,26 @@ export const firebaseLogin = async (idToken) => {
 
 export const getMe = async () => {
   const response = await axiosInstance.get('/auth/me')
+  return response.data.data
+}
+
+export const getProfile = async () => {
+  const response = await axiosInstance.get('/auth/profile')
+  return response.data.data.user
+}
+
+export const updateProfile = async (payload) => {
+  const response = await axiosInstance.put('/auth/profile', payload)
+  return response.data.data
+}
+
+export const uploadProfilePicture = async (formData) => {
+  const token = localStorage.getItem(TOKEN_KEY)
+  const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+
+  const response = await axios.post(`${baseURL}/auth/profile/picture`, formData, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
   return response.data.data
 }
 
