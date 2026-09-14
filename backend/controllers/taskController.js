@@ -2,6 +2,16 @@ const Task = require('../models/Task');
 const ActivityLog = require('../models/ActivityLog');
 const Notification = require('../models/Notification');
 
+const isPlainObject = (value) => (
+  !!value && typeof value === 'object' && !Array.isArray(value)
+);
+
+const getLiteralString = (value) => (
+  typeof value === 'string' ? value.trim() : ''
+);
+
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 exports.createTask = async (req, res, next) => {
   try {
     console.log('createTask body:', req.body);
@@ -35,13 +45,19 @@ exports.getTasks = async (req, res, next) => {
     const { project, page = 1, limit = 10, search, priority, status, assignedTo } = req.query;
     const filter = {};
 
-    if (project) filter.project = project;
-    if (priority) filter.priority = priority;
-    if (status) filter.status = status;
-    if (assignedTo) filter.assignedTo = assignedTo;
+    const projectValue = getLiteralString(project);
+    const priorityValue = getLiteralString(priority);
+    const statusValue = getLiteralString(status);
+    const assignedToValue = getLiteralString(assignedTo);
+    const searchValue = getLiteralString(search);
 
-    if (search) {
-      filter.title = { $regex: search, $options: 'i' };
+    if (projectValue) filter.project = { $eq: projectValue };
+    if (priorityValue) filter.priority = { $eq: priorityValue };
+    if (statusValue) filter.status = { $eq: statusValue };
+    if (assignedToValue) filter.assignedTo = { $eq: assignedToValue };
+
+    if (searchValue) {
+      filter.title = { $regex: escapeRegex(searchValue), $options: 'i' };
     }
 
     const pageNumber = Math.max(1, Number(page) || 1);
@@ -92,7 +108,27 @@ exports.getTaskById = async (req, res, next) => {
 exports.updateTask = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const updated = await Task.findByIdAndUpdate(id, req.body, {
+    if (!isPlainObject(req.body)) {
+      const error = new Error('Invalid request body');
+      error.statusCode = 400;
+      return next(error);
+    }
+
+    const allowedFields = ['title', 'description', 'status', 'priority', 'dueDate', 'assignedTo', 'project'];
+    const updatePayload = {};
+    for (const field of allowedFields) {
+      if (!Object.prototype.hasOwnProperty.call(req.body, field)) continue;
+      const value = req.body[field];
+      if (value === null || typeof value === 'string') {
+        updatePayload[field] = value;
+        continue;
+      }
+      const error = new Error(`Invalid value for "${field}"`);
+      error.statusCode = 400;
+      return next(error);
+    }
+
+    const updated = await Task.findOneAndUpdate({ _id: { $eq: id } }, { $set: updatePayload }, {
       returnDocument: 'after',
       runValidators: true,
     });
@@ -136,9 +172,9 @@ exports.updateTaskStatus = async (req, res, next) => {
       return next(error);
     }
 
-    const updated = await Task.findByIdAndUpdate(
-      id,
-      { status },
+    const updated = await Task.findOneAndUpdate(
+      { _id: { $eq: id } },
+      { $set: { status } },
       { returnDocument: 'after', runValidators: true }
     );
 

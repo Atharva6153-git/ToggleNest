@@ -6,7 +6,7 @@ exports.getDashboardSummary = async (req, res, next) => {
     const filter = {};
 
     if (project) {
-      filter.project = project;
+      filter.project = { $eq: project };
     }
 
     const tasks = await Task.find(filter);

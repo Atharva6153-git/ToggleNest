@@ -4,9 +4,11 @@ const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 
 jest.mock('../middleware/authMiddleware', () => (req, res, next) => {
-  req.user = { userId: '507f1f77bcf86cd799439011' };
+  req.user = { userId: '507f1f77bcf86cd799439011', role: 'admin' };
   next();
 });
+
+jest.mock('../middleware/roleMiddleware', () => () => (req, res, next) => next());
 
 const Task = require('../models/Task');
 const taskRoutes = require('../routes/taskRoutes');

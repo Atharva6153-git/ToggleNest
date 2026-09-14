@@ -73,25 +73,25 @@ function SocialAuthButtons() {
     }
   }
 
-  const handleClick = (name) => {
-    signInWithFirebase(name.toLowerCase())
+  const handleClick = (item) => {
+    signInWithFirebase(item.name.toLowerCase())
   }
 
   return (
     <div className="auth-social">
       <div className="auth-social-buttons">
-        {providers.map(({ name, Icon }) => (
+        {providers.map((item) => (
           <motion.button
-            key={name}
+            key={item.name}
             type="button"
             className="auth-social-btn"
-            onClick={() => handleClick(name)}
+            onClick={() => handleClick(item)}
             disabled={loading !== null}
             whileTap={loading === null ? { scale: 0.97 } : undefined}
             transition={{ duration: 0.1 }}
           >
-            <Icon />
-            <span>{loading === name.toLowerCase() ? 'Signing in...' : name}</span>
+            <item.Icon />
+            <span>{loading === item.name.toLowerCase() ? 'Signing in...' : item.name}</span>
           </motion.button>
         ))}
       </div>

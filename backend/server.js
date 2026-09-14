@@ -8,6 +8,23 @@ const helmet = require('helmet');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
+const hpp = require('hpp');
+
+const sanitizeMongoKeys = (obj) => {
+  if (Array.isArray(obj)) {
+    obj.forEach(sanitizeMongoKeys);
+    return;
+  }
+  if (obj && typeof obj === 'object') {
+    Object.keys(obj).forEach((key) => {
+      if (key.startsWith('$') || key.includes('.')) {
+        delete obj[key];
+      } else {
+        sanitizeMongoKeys(obj[key]);
+      }
+    });
+  }
+};
 
 const app = express();
 
@@ -24,6 +41,11 @@ const limiter = rateLimit({
 app.use(express.json());
 app.use(cors());
 app.use(helmet());
+app.use((req, res, next) => {
+  sanitizeMongoKeys(req.body);
+  next();
+});
+app.use(hpp());
 if (process.env.NODE_ENV !== 'production') {
   app.use(morgan('dev'));
 }

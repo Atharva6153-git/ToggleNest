@@ -35,13 +35,17 @@ PORT=5000
 MONGO_URI=mongodb://localhost:27017/togglenest
 JWT_SECRET=your_super_secret_key
 NODE_ENV=development
+FIREBASE_SERVICE_ACCOUNT_PATH=./config/firebase-service-account.json
 ```
 
 Required variables:
 - `PORT` - port for the backend server
 - `MONGO_URI` - MongoDB connection string
 - `JWT_SECRET` - secret used to sign JWT tokens
+- `FIREBASE_SERVICE_ACCOUNT_PATH` - path to the Firebase Admin SDK service account JSON (used to verify Google/GitHub login tokens)
 - `NODE_ENV` - optional, typically `development` or `production`
+
+> The Firebase service account JSON is **gitignored** and must be added manually. Download it from Firebase Console > Project settings > Service accounts > Generate new private key, then save it where your `FIREBASE_SERVICE_ACCOUNT_PATH` entry points (e.g. `backend/config/firebase-service-account.json`). Never commit it.
 
 ## Local Setup
 

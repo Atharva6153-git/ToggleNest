@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import Layout from '../components/Layout'
 import PageTransition from '../components/PageTransition'
 import { getProjects } from '../api/projectApi'
+import { useAuth } from '../context/AuthContext'
 
 const gridVariants = {
   hidden: {},
@@ -19,6 +20,7 @@ const cardVariants = {
 
 const Projects = () => {
   const navigate = useNavigate()
+  const { isAdmin } = useAuth()
 
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
@@ -54,14 +56,16 @@ const Projects = () => {
             <p>Organize, manage and keep track of your work.</p>
           </div>
 
-          <motion.button
-            className="create-btn"
-            onClick={() => navigate('/projects/create')}
-            whileTap={{ scale: 0.97 }}
-            transition={{ duration: 0.1 }}
-          >
-            + Create Project
-          </motion.button>
+          {isAdmin && (
+            <motion.button
+              className="create-btn"
+              onClick={() => navigate('/projects/create')}
+              whileTap={{ scale: 0.97 }}
+              transition={{ duration: 0.1 }}
+            >
+              + Create Project
+            </motion.button>
+          )}
         </div>
 
         {loading ? (
