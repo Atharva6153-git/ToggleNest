@@ -204,7 +204,7 @@ router.get('/:id', auth, projectController.getProjectById);
  *       404:
  *         description: Project not found
  */
-router.put('/:id', auth, projectController.updateProject);
+router.put('/:id', auth, roleMiddleware('admin'), projectController.updateProject);
 
 /**
  * @swagger
@@ -259,7 +259,7 @@ router.put('/:id', auth, projectController.updateProject);
  *       404:
  *         description: Project not found
  */
-router.patch('/:id', auth, projectController.updateProject);
+router.patch('/:id', auth, roleMiddleware('admin'), projectController.updateProject);
 
 /**
  * @swagger

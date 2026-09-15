@@ -80,7 +80,11 @@ const Projects = () => {
         ) : projects.length === 0 ? (
           <div className="empty-state">
             <h2>No projects yet</h2>
-            <p>Create your first project to get started.</p>
+            <p>
+              {isAdmin
+                ? 'Create your first project to get started.'
+                : "You haven't been added to any projects yet."}
+            </p>
           </div>
         ) : (
           <motion.div
@@ -124,16 +128,18 @@ const Projects = () => {
                     Open Board →
                   </button>
 
-                  <motion.button
-                    className="secondary-btn"
-                    onClick={() =>
-                      navigate(`/projects/edit/${project._id}`)
-                    }
-                    whileTap={{ scale: 0.97 }}
-                    transition={{ duration: 0.1 }}
-                  >
-                    Manage
-                  </motion.button>
+                  {isAdmin && (
+                    <motion.button
+                      className="secondary-btn"
+                      onClick={() =>
+                        navigate(`/projects/edit/${project._id}`)
+                      }
+                      whileTap={{ scale: 0.97 }}
+                      transition={{ duration: 0.1 }}
+                    >
+                      Manage
+                    </motion.button>
+                  )}
                 </div>
               </motion.div>
             ))}

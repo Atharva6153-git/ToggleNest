@@ -14,6 +14,7 @@ import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
 import RequireAuth from './components/RequireAuth'
 import HomeRoute from './components/HomeRoute'
+import AdminRoute from './components/AdminRoute'
 
 function App() {
   const location = useLocation()
@@ -62,7 +63,9 @@ function App() {
         path="/projects/create"
         element={
           <RequireAuth>
-            <CreateProject />
+            <AdminRoute>
+              <CreateProject />
+            </AdminRoute>
           </RequireAuth>
         }
       />
@@ -70,7 +73,9 @@ function App() {
         path="/projects/edit/:id"
         element={
           <RequireAuth>
-            <EditProject />
+            <AdminRoute>
+              <EditProject />
+            </AdminRoute>
           </RequireAuth>
         }
       />
