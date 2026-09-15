@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { CalendarClock } from 'lucide-react'
 
 function formatDate(dateValue) {
   if (!dateValue) return 'No due date'
@@ -20,6 +21,19 @@ function getPriorityClass(priority = 'Medium') {
   return `priority-${String(priority).toLowerCase()}`
 }
 
+function getInitials(name) {
+  const trimmed = String(name ?? '').trim()
+  if (!trimmed) return '?'
+
+  const parts = trimmed.split(/\s+/)
+
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase()
+  }
+
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+}
+
 const cardVariants = {
   hidden: { opacity: 0, y: 15 },
   visible: { opacity: 1, y: 0 },
@@ -27,9 +41,17 @@ const cardVariants = {
 
 function TaskCard({ task, onClick, provided, snapshot }) {
   const assigneeName = task?.assignedTo?.name || task?.assignedTo || 'Unassigned'
+  const assigneeInitials = getInitials(assigneeName)
   const dueDate = formatDate(task?.dueDate)
   const priorityLabel = task?.priority || 'Medium'
   const priorityBorderClass = `priority-border-${String(priorityLabel).toLowerCase()}`
+
+  const dueTime = task?.dueDate ? new Date(task.dueDate).getTime() : null
+  const isOverdue =
+    task?.status !== 'Done' &&
+    dueTime !== null &&
+    !Number.isNaN(dueTime) &&
+    dueTime < Date.now()
 
   return (
     <article
@@ -49,14 +71,25 @@ function TaskCard({ task, onClick, provided, snapshot }) {
       >
       <div className="kanban-card-header">
         <h3 className="kanban-task-title">{task?.title || 'Untitled task'}</h3>
-        <span className={`priority-badge ${getPriorityClass(priorityLabel)}`}>
-          {priorityLabel}
-        </span>
+        <div className="kanban-card-badges">
+          <span className={`priority-badge ${getPriorityClass(priorityLabel)}`}>
+            {priorityLabel}
+          </span>
+          <span
+            className={`kanban-avatar ${assigneeName === 'Unassigned' ? 'kanban-avatar-unassigned' : ''}`}
+            title={assigneeName}
+            aria-label={`Assigned to ${assigneeName}`}
+          >
+            {assigneeInitials}
+          </span>
+        </div>
       </div>
 
       <div className="kanban-card-meta">
-        <span>
+        <span className={isOverdue ? 'kanban-due is-overdue' : 'kanban-due'}>
+          <CalendarClock size={13} aria-hidden="true" />
           <strong>Due:</strong> {dueDate}
+          {isOverdue && <span className="kanban-overdue-tag">Overdue</span>}
         </span>
         <span>
           <strong>Assignee:</strong> {assigneeName}
