@@ -1,24 +1,19 @@
 import { motion } from 'framer-motion'
-import { CalendarClock } from 'lucide-react'
+import { CalendarClock, AlertTriangle, Circle, ArrowDown } from 'lucide-react'
 
 function formatDate(dateValue) {
-  if (!dateValue) return 'No due date'
+  if (!dateValue) return null
 
   const date = new Date(dateValue)
 
   if (Number.isNaN(date.getTime())) {
-    return 'No due date'
+    return null
   }
 
   return date.toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
-    year: 'numeric',
   })
-}
-
-function getPriorityClass(priority = 'Medium') {
-  return `priority-${String(priority).toLowerCase()}`
 }
 
 function getInitials(name) {
@@ -34,24 +29,56 @@ function getInitials(name) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
 }
 
+function getPriorityConfig(priority = 'Medium') {
+  switch (priority) {
+    case 'High':
+      return { icon: AlertTriangle, label: 'High', className: 'priority-chip-high' }
+    case 'Low':
+      return { icon: ArrowDown, label: 'Low', className: 'priority-chip-low' }
+    default:
+      return { icon: Circle, label: 'Medium', className: 'priority-chip-medium' }
+  }
+}
+
+const AVATAR_COLORS = ['#ef4444', '#f59e0b', '#3b82f6', '#8b5cf6', '#10b981', '#ec4899', '#06b6d4']
+
+function getAvatarColor(name) {
+  const trimmed = String(name ?? '').trim()
+  if (!trimmed) return AVATAR_COLORS[0]
+  let hash = 0
+  for (let i = 0; i < trimmed.length; i++) {
+    hash = trimmed.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
+}
+
 const cardVariants = {
-  hidden: { opacity: 0, y: 15 },
+  hidden: { opacity: 0, y: 12 },
   visible: { opacity: 1, y: 0 },
 }
 
 function TaskCard({ task, onClick, provided, snapshot }) {
-  const assigneeName = task?.assignedTo?.name || task?.assignedTo || 'Unassigned'
-  const assigneeInitials = getInitials(assigneeName)
+  const assigneeName = task?.assignedTo?.name || null
+  const assigneeInitials = assigneeName ? getInitials(assigneeName) : null
+  const description = task?.description || ''
   const dueDate = formatDate(task?.dueDate)
   const priorityLabel = task?.priority || 'Medium'
-  const priorityBorderClass = `priority-border-${String(priorityLabel).toLowerCase()}`
+  const { icon: PriorityIcon, label: priorityText, className: priorityClass } =
+    getPriorityConfig(priorityLabel)
 
   const dueTime = task?.dueDate ? new Date(task.dueDate).getTime() : null
+  const now = Date.now()
   const isOverdue =
     task?.status !== 'Done' &&
     dueTime !== null &&
     !Number.isNaN(dueTime) &&
-    dueTime < Date.now()
+    dueTime < now
+  const isDueSoon =
+    !isOverdue &&
+    task?.status !== 'Done' &&
+    dueTime !== null &&
+    !Number.isNaN(dueTime) &&
+    dueTime - now < 3 * 24 * 60 * 60 * 1000
 
   return (
     <article
@@ -61,40 +88,56 @@ function TaskCard({ task, onClick, provided, snapshot }) {
       {...provided?.draggableProps}
     >
       <motion.div
-        className={`kanban-card ${priorityBorderClass} ${snapshot?.isDragging ? 'is-dragging' : ''}`}
+        className={`kanban-card ${snapshot?.isDragging ? 'is-dragging' : ''}`}
         onClick={onClick}
         role="button"
         tabIndex={0}
         variants={cardVariants}
-        whileHover={snapshot?.isDragging ? undefined : { y: -6, scale: 1.01 }}
-        transition={{ duration: 0.4, ease: 'easeOut' }}
+        whileHover={snapshot?.isDragging ? undefined : { y: -2 }}
+        transition={{ duration: 0.25, ease: 'easeOut' }}
       >
-      <div className="kanban-card-header">
-        <h3 className="kanban-task-title">{task?.title || 'Untitled task'}</h3>
-        <div className="kanban-card-badges">
-          <span className={`priority-badge ${getPriorityClass(priorityLabel)}`}>
-            {priorityLabel}
+        <div className="kanban-card-top">
+          <span className={`priority-chip ${priorityClass}`}>
+            <PriorityIcon size={12} aria-hidden="true" />
+            {priorityText}
           </span>
           <span
-            className={`kanban-avatar ${assigneeName === 'Unassigned' ? 'kanban-avatar-unassigned' : ''}`}
-            title={assigneeName}
-            aria-label={`Assigned to ${assigneeName}`}
+            className="kanban-avatar"
+            style={{ background: getAvatarColor(assigneeName || '') }}
+            title={assigneeName || 'Unassigned'}
+            aria-label={`Assigned to ${assigneeName || 'Unassigned'}`}
           >
-            {assigneeInitials}
+            {assigneeInitials || '?'}
           </span>
         </div>
-      </div>
 
-      <div className="kanban-card-meta">
-        <span className={isOverdue ? 'kanban-due is-overdue' : 'kanban-due'}>
-          <CalendarClock size={13} aria-hidden="true" />
-          <strong>Due:</strong> {dueDate}
-          {isOverdue && <span className="kanban-overdue-tag">Overdue</span>}
-        </span>
-        <span>
-          <strong>Assignee:</strong> {assigneeName}
-        </span>
-      </div>
+        <h3 className="kanban-task-title">{task?.title || 'Untitled task'}</h3>
+
+        {description && <p className="kanban-card-description">{description}</p>}
+
+        <div className="kanban-card-divider" />
+
+        <div className="kanban-card-footer">
+          <span
+            className={
+              isOverdue
+                ? 'kanban-due is-overdue'
+                : isDueSoon
+                  ? 'kanban-due is-due-soon'
+                  : 'kanban-due'
+            }
+          >
+            <CalendarClock size={13} aria-hidden="true" />
+            {dueDate || 'No due date'}
+          </span>
+          <span
+            className="kanban-avatar kanban-avatar-sm"
+            style={{ background: getAvatarColor(assigneeName || '') }}
+            title={assigneeName || 'Unassigned'}
+          >
+            {assigneeInitials || '?'}
+          </span>
+        </div>
       </motion.div>
     </article>
   )

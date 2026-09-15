@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd'
 import { motion } from 'framer-motion'
 import { toast } from 'react-hot-toast'
+import { Plus } from 'lucide-react'
 import { createTask, deleteTask, getTasks, updateTask, updateTaskStatus } from '../../api/taskApi'
 import TaskCard from './TaskCard'
 import SkeletonCard from '../SkeletonCard'
@@ -15,9 +16,9 @@ import { getProject } from '../../api/projectApi'
 import ThemeToggleButton from '../ThemeToggleButton'
 
 const columns = [
-  { id: 'To-Do', title: 'To-Do' },
-  { id: 'In Progress', title: 'In Progress' },
-  { id: 'Done', title: 'Done' },
+  { id: 'To-Do', title: 'To-Do', dotColor: '#94a3b8' },
+  { id: 'In Progress', title: 'In Progress', dotColor: '#8b5cf6' },
+  { id: 'Done', title: 'Done', dotColor: '#10b981' },
 ]
 
 const cardListVariants = {
@@ -291,7 +292,10 @@ function KanbanBoard() {
             {columns.map((column) => (
               <div className="kanban-column" key={column.id}>
                 <div className="kanban-column-header">
-                  <h2 className="kanban-column-title">{column.title}</h2>
+                  <div className="kanban-column-label">
+                    <span className="kanban-status-dot" style={{ background: column.dotColor }} />
+                    <h2 className="kanban-column-title">{column.title}</h2>
+                  </div>
                   <span className="kanban-count">–</span>
                 </div>
                 <div className="kanban-card-list">
@@ -319,7 +323,10 @@ function KanbanBoard() {
                         {...provided.droppableProps}
                       >
                         <div className="kanban-column-header">
-                          <h2 className="kanban-column-title">{column.title}</h2>
+                          <div className="kanban-column-label">
+                            <span className="kanban-status-dot" style={{ background: column.dotColor }} />
+                            <h2 className="kanban-column-title">{column.title}</h2>
+                          </div>
                           <span className="kanban-count">{columnTasks.length}</span>
                         </div>
 
@@ -347,6 +354,15 @@ function KanbanBoard() {
                           )}
                           {provided.placeholder}
                         </motion.div>
+
+                        <button
+                          type="button"
+                          className="kanban-add-task-btn"
+                          onClick={() => setIsModalOpen(true)}
+                        >
+                          <Plus size={14} aria-hidden="true" />
+                          Add task
+                        </button>
                       </div>
                     )}
                   </Droppable>

@@ -20,6 +20,8 @@
   --danger-soft: rgba(239, 68, 68, 0.15);
   --warning: #f59e0b;
   --warning-soft: rgba(245, 158, 11, 0.15);
+  --info: #3b82f6;
+  --info-soft: rgba(59, 130, 246, 0.15);
   --sidebar-bg: #111111;
   --sidebar-text: #f5f5f5;
 }
@@ -43,6 +45,8 @@
   --danger-soft: rgba(220, 38, 38, 0.12);
   --warning: #d97706;
   --warning-soft: rgba(217, 119, 6, 0.12);
+  --info: #2563eb;
+  --info-soft: rgba(37, 99, 235, 0.12);
   --sidebar-bg: #ffffff;
   --sidebar-text: #18181b;
 }
