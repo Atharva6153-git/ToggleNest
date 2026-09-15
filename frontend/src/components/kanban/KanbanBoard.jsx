@@ -6,6 +6,7 @@ import { toast } from 'react-hot-toast'
 import { createTask, deleteTask, getTasks, updateTask, updateTaskStatus } from '../../api/taskApi'
 import TaskCard from './TaskCard'
 import SkeletonCard from '../SkeletonCard'
+import FiltersBar from '../FiltersBar'
 import TaskDetailsModal from './TaskDetailsModal'
 import TaskFormModal from './TaskFormModal'
 import PageTransition from '../PageTransition'
@@ -35,10 +36,28 @@ function KanbanBoard() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedTask, setSelectedTask] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [filters, setFilters] = useState({
+    search: '',
+    priority: '',
+    status: '',
+    assignedTo: '',
+  })
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+
+  useEffect(() => {
+    const timeout = setTimeout(() => setDebouncedSearch(filters.search), 400)
+    return () => clearTimeout(timeout)
+  }, [filters.search])
 
   const fetchTasks = useCallback(async () => {
     try {
-      const data = await getTasks(projectId)
+      const params = {
+        search: debouncedSearch || undefined,
+        priority: filters.priority || undefined,
+        status: filters.status || undefined,
+        assignedTo: filters.assignedTo || undefined,
+      }
+      const data = await getTasks(projectId, params)
       setTasks(data)
       setError('')
     } catch (err) {
@@ -46,7 +65,7 @@ function KanbanBoard() {
     } finally {
       setLoading(false)
     }
-  }, [projectId])
+  }, [projectId, debouncedSearch, filters.priority, filters.status, filters.assignedTo])
 
   useEffect(() => {
     fetchTasks()
@@ -137,6 +156,32 @@ function KanbanBoard() {
     }
   }
 
+  const clearFilters = useCallback(() => {
+    setFilters({ search: '', priority: '', status: '', assignedTo: '' })
+    setDebouncedSearch('')
+  }, [])
+
+  const updateFilter = useCallback((key, value) => {
+    setFilters((current) => ({ ...current, [key]: value }))
+  }, [])
+
+  const handleSearchChange = useCallback(
+    (value) => updateFilter('search', value),
+    [updateFilter],
+  )
+  const handlePriorityChange = useCallback(
+    (value) => updateFilter('priority', value),
+    [updateFilter],
+  )
+  const handleStatusChange = useCallback(
+    (value) => updateFilter('status', value),
+    [updateFilter],
+  )
+  const handleAssignedToChange = useCallback(
+    (value) => updateFilter('assignedTo', value),
+    [updateFilter],
+  )
+
   const handleDragEnd = async (result) => {
     const { destination, source, draggableId } = result
 
@@ -212,6 +257,19 @@ function KanbanBoard() {
             </motion.button>
           </div>
         </header>
+
+        <FiltersBar
+          searchValue={filters.search}
+          onSearchChange={handleSearchChange}
+          priorityValue={filters.priority}
+          onPriorityChange={handlePriorityChange}
+          statusValue={filters.status}
+          onStatusChange={handleStatusChange}
+          assignedToValue={filters.assignedTo}
+          onAssignedToChange={handleAssignedToChange}
+          onClear={clearFilters}
+          searchPlaceholder="Search tasks..."
+        />
 
         {loading ? (
           <section className="kanban-columns" aria-label="Loading board">

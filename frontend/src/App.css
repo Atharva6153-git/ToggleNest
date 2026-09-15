@@ -1071,6 +1071,15 @@
   .auth-social-buttons {
     flex-direction: column;
   }
+
+  .filters-select {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .filters-clear-btn {
+    flex: 1 1 100%;
+  }
 }
 
 /* Kanban */
@@ -1139,6 +1148,95 @@
 
 .kanban-button:disabled {
   opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Filters bar */
+
+.filters-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.filters-search {
+  position: relative;
+  flex: 1 1 220px;
+  min-width: 180px;
+}
+
+.filters-search-icon {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  transform: translateY(-50%);
+  font-size: 14px;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.filters-search-input {
+  width: 100%;
+  padding: 10px 12px 10px 34px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.filters-search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.filters-search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.filters-select {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.filters-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.filters-clear-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.filters-clear-btn:hover:not(:disabled) {
+  background: var(--bg);
+  border-color: var(--accent-hover);
+  color: var(--text);
+}
+
+.filters-clear-btn:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
 }
 

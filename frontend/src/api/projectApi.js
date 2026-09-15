@@ -1,7 +1,7 @@
 import axiosInstance from './axiosInstance'
 
-export const getProjects = async () => {
-  const response = await axiosInstance.get('/projects', { params: { limit: 100 } })
+export const getProjects = async (params = {}) => {
+  const response = await axiosInstance.get('/projects', { params: { limit: 100, ...params } })
   return response.data.data
 }
 
