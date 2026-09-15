@@ -24,6 +24,8 @@ const notificationSchema = new Schema(
         'task_updated',
         'task_deleted',
         'task_completed',
+        'project_updated',
+        'project_deleted',
       ],
       default: 'task_assigned',
     },

@@ -23,23 +23,30 @@ const getRole = async (userId) => {
   }
 };
 
-const getAdminIds = async (excludeUserId) => {
-  const admins = await User.find({
-    role: 'admin',
-    ...(excludeUserId ? { _id: { $ne: excludeUserId } } : {}),
-  }).select('_id');
-  return admins.map((admin) => admin._id);
-};
+// All users who should hear about changes to a project's tasks:
+// everyone listed on the project (members) plus every admin, minus the actor.
+const getProjectRecipients = async (projectId, excludeUserId) => {
+  const recipientSet = new Set();
 
-const getProjectMemberIds = async (projectId, excludeUserId) => {
-  if (!projectId) return [];
-  const project = await Project.findById(projectId).select('members');
-  if (!project || !project.members || !project.members.length) return [];
-  const members = await User.find({
-    _id: { $in: project.members, ...(excludeUserId ? { $ne: excludeUserId } : {}) },
-    role: 'member',
-  }).select('_id');
-  return members.map((member) => member._id);
+  if (projectId) {
+    const project = await Project.findById(projectId).select('members');
+    if (project && project.members) {
+      for (const memberId of project.members) {
+        recipientSet.add(String(memberId));
+      }
+    }
+  }
+
+  const admins = await User.find({ role: 'admin' }).select('_id');
+  for (const admin of admins) {
+    recipientSet.add(String(admin._id));
+  }
+
+  if (excludeUserId) {
+    recipientSet.delete(String(excludeUserId));
+  }
+
+  return [...recipientSet];
 };
 
 const createNotifications = async (notifications) => {
@@ -51,41 +58,76 @@ const createNotifications = async (notifications) => {
   }
 };
 
+const formatDate = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString();
+};
+
+// Human-readable list of what changed on a task update.
+const buildTaskChangeDetails = (previous, updated) => {
+  const details = [];
+  if (previous && updated) {
+    if (previous.title !== updated.title) {
+      details.push(`title changed to "${updated.title}"`);
+    }
+    if (previous.status !== updated.status) {
+      details.push(`status changed to ${updated.status}`);
+    }
+    if (previous.priority !== updated.priority) {
+      details.push(`priority changed to ${updated.priority}`);
+    }
+    const prevDue = formatDate(previous.dueDate);
+    const newDue = formatDate(updated.dueDate);
+    if (prevDue !== newDue) {
+      details.push(`due date changed to ${newDue || 'none'}`);
+    }
+    if (previous.description !== updated.description) {
+      details.push('description was updated');
+    }
+    if (
+      String(previous.assignedTo || '') !== String(updated.assignedTo || '')
+    ) {
+      details.push('assignee was changed');
+    }
+  }
+  if (!details.length) {
+    details.push('details were updated');
+  }
+  return details;
+};
+
 exports.createTask = async (req, res, next) => {
   try {
-    console.log('createTask body:', req.body);
     const task = new Task(req.body);
     task.createdBy = req.user?.userId;
     const saved = await task.save();
 
     const actor = await getRole(req.user?.userId);
+    const actorName = actor?.name || 'A member';
 
-    if (actor?.role === 'admin') {
-      const memberIds = await getProjectMemberIds(saved.project, actor._id);
-      const notifications = memberIds
-        .filter((recipient) => !saved.assignedTo || String(recipient) !== String(saved.assignedTo))
-        .map((recipient) => ({
-          recipient,
-          message: `New task "${saved.title}" was created`,
-          type: 'task_created',
-          relatedTask: saved._id,
-        }));
+    const recipientIds = await getProjectRecipients(saved.project, actor?._id);
+    const notifications = recipientIds
+      .filter((recipient) => !saved.assignedTo || recipient !== String(saved.assignedTo))
+      .map((recipient) => ({
+        recipient,
+        message: `${actorName} created a new task "${saved.title}"`,
+        type: 'task_created',
+        relatedTask: saved._id,
+      }));
 
-      if (saved.assignedTo && String(saved.assignedTo) !== String(actor._id)) {
-        const assignee = await getRole(saved.assignedTo);
-        if (assignee?.role === 'member') {
-          notifications.push({
-            recipient: saved.assignedTo,
-            message: `You were assigned to task: ${saved.title}`,
-            type: 'task_assigned',
-            relatedTask: saved._id,
-          });
-        }
-      }
-
-      await createNotifications(notifications);
-      console.log('createTask: notifications created for', notifications.length, 'recipient(s)');
+    if (saved.assignedTo && String(saved.assignedTo) !== String(actor?._id)) {
+      notifications.push({
+        recipient: saved.assignedTo,
+        message: `You were assigned to task: ${saved.title}`,
+        type: 'task_assigned',
+        relatedTask: saved._id,
+      });
     }
+
+    await createNotifications(notifications);
+    console.log('createTask: notifications created for', notifications.length, 'recipient(s)');
 
     return res.status(201).json({ success: true, data: saved });
   } catch (err) {
@@ -182,7 +224,9 @@ exports.updateTask = async (req, res, next) => {
       return next(error);
     }
 
-    const previous = await Task.findById(id).select('assignedTo project title');
+    const previous = await Task.findById(id).select(
+      'title description status priority dueDate assignedTo project'
+    );
 
     const updated = await Task.findOneAndUpdate({ _id: { $eq: id } }, { $set: updatePayload }, {
       returnDocument: 'after',
@@ -195,34 +239,35 @@ exports.updateTask = async (req, res, next) => {
     }
 
     const actor = await getRole(req.user?.userId);
+    const actorName = actor?.name || 'A member';
 
-    if (actor?.role === 'admin') {
-      const memberIds = await getProjectMemberIds(updated.project, actor._id);
-      const notifications = memberIds
-        .filter((recipient) => !updated.assignedTo || String(recipient) !== String(updated.assignedTo))
-        .map((recipient) => ({
-          recipient,
-          message: `Task "${updated.title}" was updated`,
-          type: 'task_updated',
-          relatedTask: updated._id,
-        }));
+    const recipientIds = await getProjectRecipients(updated.project, actor?._id);
+    const details = buildTaskChangeDetails(previous, updated);
+    const notifications = recipientIds
+      .filter((recipient) => !updated.assignedTo || recipient !== String(updated.assignedTo))
+      .map((recipient) => ({
+        recipient,
+        message: `${actorName} updated task "${updated.title}": ${details.join(', ')}`,
+        type: 'task_updated',
+        relatedTask: updated._id,
+      }));
 
-      const previousAssignee = previous?.assignedTo?.toString();
-      const newAssigneeId = updated.assignedTo?.toString();
-      if (newAssigneeId && newAssigneeId !== previousAssignee && newAssigneeId !== actor._id.toString()) {
-        const assignee = await getRole(newAssigneeId);
-        if (assignee?.role === 'member') {
-          notifications.push({
-            recipient: newAssigneeId,
-            message: `You were assigned to task: ${updated.title}`,
-            type: 'task_assigned',
-            relatedTask: updated._id,
-          });
-        }
-      }
-
-      await createNotifications(notifications);
+    const previousAssignee = previous?.assignedTo?.toString();
+    const newAssigneeId = updated.assignedTo?.toString();
+    if (
+      newAssigneeId &&
+      newAssigneeId !== previousAssignee &&
+      newAssigneeId !== String(actor?._id)
+    ) {
+      notifications.push({
+        recipient: newAssigneeId,
+        message: `You were assigned to task: ${updated.title}`,
+        type: 'task_assigned',
+        relatedTask: updated._id,
+      });
     }
+
+    await createNotifications(notifications);
 
     return res.json({ success: true, data: updated });
   } catch (err) {
@@ -242,18 +287,17 @@ exports.deleteTask = async (req, res, next) => {
     }
 
     const actor = await getRole(req.user?.userId);
+    const actorName = actor?.name || 'A member';
 
-    if (actor?.role === 'admin') {
-      const memberIds = await getProjectMemberIds(deleted.project, actor._id);
-      await createNotifications(
-        memberIds.map((recipient) => ({
-          recipient,
-          message: `Task "${deleted.title}" was deleted`,
-          type: 'task_deleted',
-          relatedTask: deleted._id,
-        }))
-      );
-    }
+    const recipientIds = await getProjectRecipients(deleted.project, actor?._id);
+    await createNotifications(
+      recipientIds.map((recipient) => ({
+        recipient,
+        message: `${actorName} deleted task "${deleted.title}"`,
+        type: 'task_deleted',
+        relatedTask: deleted._id,
+      }))
+    );
 
     return res.json({ success: true, data: { message: 'Task deleted' } });
   } catch (err) {
@@ -273,6 +317,8 @@ exports.updateTaskStatus = async (req, res, next) => {
       error.statusCode = 400;
       return next(error);
     }
+
+    const previous = await Task.findById(id).select('status title project assignedTo');
 
     const updated = await Task.findOneAndUpdate(
       { _id: { $eq: id } },
@@ -297,23 +343,28 @@ exports.updateTaskStatus = async (req, res, next) => {
     }
 
     const actor = await getRole(actorId);
+    const actorName = actor?.name || 'A member';
 
-    if (actor?.role === 'admin') {
-      if (updated.assignedTo && String(updated.assignedTo) !== String(actor._id)) {
-        await Notification.create({
-          recipient: updated.assignedTo,
-          message: `Task "${updated.title}" status changed to ${status}`,
-          type: 'status_changed',
-          relatedTask: updated._id,
-        });
-      }
-    } else if (actor?.role === 'member' && status === 'Done') {
-      const adminIds = await getAdminIds(actor._id);
+    const recipientIds = await getProjectRecipients(updated.project, actor?._id);
+    const previousStatus = previous?.status;
+
+    if (actor?.role === 'member' && status === 'Done') {
       await createNotifications(
-        adminIds.map((recipient) => ({
+        recipientIds.map((recipient) => ({
           recipient,
-          message: `${actor.name || 'A member'} completed the task "${updated.title}"`,
+          message: `${actorName} completed the task "${updated.title}"`,
           type: 'task_completed',
+          relatedTask: updated._id,
+        }))
+      );
+    } else {
+      await createNotifications(
+        recipientIds.map((recipient) => ({
+          recipient,
+          message: previousStatus && previousStatus !== status
+            ? `${actorName} moved task "${updated.title}" from ${previousStatus} to ${status}`
+            : `${actorName} changed task "${updated.title}" status to ${status}`,
+          type: 'status_changed',
           relatedTask: updated._id,
         }))
       );
