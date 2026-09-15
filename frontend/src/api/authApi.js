@@ -37,6 +37,11 @@ export const updateProfile = async (payload) => {
   return response.data.data
 }
 
+export const changePassword = async (payload) => {
+  const response = await axiosInstance.put('/auth/change-password', payload)
+  return response.data.data
+}
+
 export const uploadProfilePicture = async (formData) => {
   const token = localStorage.getItem(TOKEN_KEY)
   const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'

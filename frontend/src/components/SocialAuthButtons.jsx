@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { signInWithPopup } from 'firebase/auth'
-import { toast, Toaster } from 'react-hot-toast'
+import { toast } from 'react-hot-toast'
 import { auth, googleProvider, githubProvider } from '../firebase'
 import { firebaseLogin } from '../api/authApi'
 
@@ -98,7 +98,6 @@ function SocialAuthButtons() {
       <div className="auth-divider">
         <span>OR</span>
       </div>
-      <Toaster position="top-right" />
     </div>
   )
 }

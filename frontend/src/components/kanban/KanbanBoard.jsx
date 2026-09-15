@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd'
 import { motion } from 'framer-motion'
-import { Toaster, toast } from 'react-hot-toast'
+import { toast } from 'react-hot-toast'
 import { createTask, deleteTask, getTasks, updateTask, updateTaskStatus } from '../../api/taskApi'
 import TaskCard from './TaskCard'
 import SkeletonCard from '../SkeletonCard'
@@ -174,8 +174,6 @@ function KanbanBoard() {
   return (
     <PageTransition>
       <div className="kanban-page">
-      <Toaster position="top-right" />
-
       <TaskFormModal
         isOpen={isModalOpen}
         isSubmitting={isSubmitting}

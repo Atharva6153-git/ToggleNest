@@ -1,4 +1,6 @@
 const Task = require('../models/Task');
+const User = require('../models/User');
+const Project = require('../models/Project');
 const ActivityLog = require('../models/ActivityLog');
 const Notification = require('../models/Notification');
 
@@ -12,6 +14,43 @@ const getLiteralString = (value) => (
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+const getRole = async (userId) => {
+  if (!userId) return null;
+  try {
+    return await User.findById(userId).select('role name');
+  } catch {
+    return null;
+  }
+};
+
+const getAdminIds = async (excludeUserId) => {
+  const admins = await User.find({
+    role: 'admin',
+    ...(excludeUserId ? { _id: { $ne: excludeUserId } } : {}),
+  }).select('_id');
+  return admins.map((admin) => admin._id);
+};
+
+const getProjectMemberIds = async (projectId, excludeUserId) => {
+  if (!projectId) return [];
+  const project = await Project.findById(projectId).select('members');
+  if (!project || !project.members || !project.members.length) return [];
+  const members = await User.find({
+    _id: { $in: project.members, ...(excludeUserId ? { $ne: excludeUserId } : {}) },
+    role: 'member',
+  }).select('_id');
+  return members.map((member) => member._id);
+};
+
+const createNotifications = async (notifications) => {
+  if (!notifications || !notifications.length) return;
+  try {
+    await Notification.insertMany(notifications);
+  } catch (notifErr) {
+    console.error('error creating notifications:', notifErr);
+  }
+};
+
 exports.createTask = async (req, res, next) => {
   try {
     console.log('createTask body:', req.body);
@@ -19,18 +58,33 @@ exports.createTask = async (req, res, next) => {
     task.createdBy = req.user?.userId;
     const saved = await task.save();
 
-    if (saved.assignedTo) {
-      try {
-        await Notification.create({
-          recipient: saved.assignedTo,
-          message: `You were assigned to task: ${saved.title}`,
-          type: 'task_assigned',
+    const actor = await getRole(req.user?.userId);
+
+    if (actor?.role === 'admin') {
+      const memberIds = await getProjectMemberIds(saved.project, actor._id);
+      const notifications = memberIds
+        .filter((recipient) => !saved.assignedTo || String(recipient) !== String(saved.assignedTo))
+        .map((recipient) => ({
+          recipient,
+          message: `New task "${saved.title}" was created`,
+          type: 'task_created',
           relatedTask: saved._id,
-        });
-        console.log('createTask: notification created for assignedTo', saved.assignedTo);
-      } catch (notifErr) {
-        console.error('createTask: error creating notification', notifErr);
+        }));
+
+      if (saved.assignedTo && String(saved.assignedTo) !== String(actor._id)) {
+        const assignee = await getRole(saved.assignedTo);
+        if (assignee?.role === 'member') {
+          notifications.push({
+            recipient: saved.assignedTo,
+            message: `You were assigned to task: ${saved.title}`,
+            type: 'task_assigned',
+            relatedTask: saved._id,
+          });
+        }
       }
+
+      await createNotifications(notifications);
+      console.log('createTask: notifications created for', notifications.length, 'recipient(s)');
     }
 
     return res.status(201).json({ success: true, data: saved });
@@ -128,6 +182,8 @@ exports.updateTask = async (req, res, next) => {
       return next(error);
     }
 
+    const previous = await Task.findById(id).select('assignedTo project title');
+
     const updated = await Task.findOneAndUpdate({ _id: { $eq: id } }, { $set: updatePayload }, {
       returnDocument: 'after',
       runValidators: true,
@@ -137,6 +193,37 @@ exports.updateTask = async (req, res, next) => {
       error.statusCode = 404;
       return next(error);
     }
+
+    const actor = await getRole(req.user?.userId);
+
+    if (actor?.role === 'admin') {
+      const memberIds = await getProjectMemberIds(updated.project, actor._id);
+      const notifications = memberIds
+        .filter((recipient) => !updated.assignedTo || String(recipient) !== String(updated.assignedTo))
+        .map((recipient) => ({
+          recipient,
+          message: `Task "${updated.title}" was updated`,
+          type: 'task_updated',
+          relatedTask: updated._id,
+        }));
+
+      const previousAssignee = previous?.assignedTo?.toString();
+      const newAssigneeId = updated.assignedTo?.toString();
+      if (newAssigneeId && newAssigneeId !== previousAssignee && newAssigneeId !== actor._id.toString()) {
+        const assignee = await getRole(newAssigneeId);
+        if (assignee?.role === 'member') {
+          notifications.push({
+            recipient: newAssigneeId,
+            message: `You were assigned to task: ${updated.title}`,
+            type: 'task_assigned',
+            relatedTask: updated._id,
+          });
+        }
+      }
+
+      await createNotifications(notifications);
+    }
+
     return res.json({ success: true, data: updated });
   } catch (err) {
     console.error('updateTask error', err);
@@ -153,6 +240,21 @@ exports.deleteTask = async (req, res, next) => {
       error.statusCode = 404;
       return next(error);
     }
+
+    const actor = await getRole(req.user?.userId);
+
+    if (actor?.role === 'admin') {
+      const memberIds = await getProjectMemberIds(deleted.project, actor._id);
+      await createNotifications(
+        memberIds.map((recipient) => ({
+          recipient,
+          message: `Task "${deleted.title}" was deleted`,
+          type: 'task_deleted',
+          relatedTask: deleted._id,
+        }))
+      );
+    }
+
     return res.json({ success: true, data: { message: 'Task deleted' } });
   } catch (err) {
     console.error('deleteTask error', err);
@@ -194,13 +296,27 @@ exports.updateTaskStatus = async (req, res, next) => {
       });
     }
 
-    if (updated.assignedTo && String(actorId) !== String(updated.assignedTo)) {
-      await Notification.create({
-        recipient: updated.assignedTo,
-        message: `Task "${updated.title}" status changed to ${status}`,
-        type: 'status_changed',
-        relatedTask: updated._id,
-      });
+    const actor = await getRole(actorId);
+
+    if (actor?.role === 'admin') {
+      if (updated.assignedTo && String(updated.assignedTo) !== String(actor._id)) {
+        await Notification.create({
+          recipient: updated.assignedTo,
+          message: `Task "${updated.title}" status changed to ${status}`,
+          type: 'status_changed',
+          relatedTask: updated._id,
+        });
+      }
+    } else if (actor?.role === 'member' && status === 'Done') {
+      const adminIds = await getAdminIds(actor._id);
+      await createNotifications(
+        adminIds.map((recipient) => ({
+          recipient,
+          message: `${actor.name || 'A member'} completed the task "${updated.title}"`,
+          type: 'task_completed',
+          relatedTask: updated._id,
+        }))
+      );
     }
 
     return res.json({ success: true, data: updated });

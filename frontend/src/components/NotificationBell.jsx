@@ -68,19 +68,31 @@ function NotificationBell() {
     }
   }, [extractNotifications])
 
+  const refresh = useCallback(async () => {
+    if (!localStorage.getItem(TOKEN_KEY)) return
+    try {
+      const res = await getNotifications({ limit: 30 })
+      const items = extractNotifications(res)
+      setNotifications(items)
+      setUnreadCount(res?.unreadCount || 0)
+      setError('')
+    } catch {
+      // ignore polling errors
+    }
+  }, [extractNotifications])
+
   const refreshUnreadCount = useCallback(async () => {
     if (!localStorage.getItem(TOKEN_KEY)) return
     try {
-      const res = await getNotifications({ limit: 1 })
+      const res = await getNotifications({ limit: open ? 30 : 1 })
       setUnreadCount(res?.unreadCount || 0)
-      setNotifications((prev) => {
-        const items = extractNotifications(res)
-        return items.length > 0 && items.length !== prev.length ? items : prev
-      })
+      if (open) {
+        setNotifications(extractNotifications(res))
+      }
     } catch {
-      // ignore polling errors for the badge count
+      // ignore poll errors for the badge count
     }
-  }, [extractNotifications])
+  }, [open, extractNotifications])
 
   useEffect(() => {
     setToken(localStorage.getItem(TOKEN_KEY))
@@ -88,9 +100,13 @@ function NotificationBell() {
 
   useEffect(() => {
     fetchNotifications()
-    const interval = setInterval(refreshUnreadCount, 30000)
-    return () => clearInterval(interval)
-  }, [fetchNotifications, refreshUnreadCount, token])
+    const listInterval = setInterval(refresh, 30000)
+    const countInterval = setInterval(refreshUnreadCount, 5000)
+    return () => {
+      clearInterval(listInterval)
+      clearInterval(countInterval)
+    }
+  }, [fetchNotifications, refresh, refreshUnreadCount, token])
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -147,7 +163,14 @@ function NotificationBell() {
         aria-expanded={open}
       >
         <BellIcon />
-        {unreadCount > 0 && <span className="notification-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>}
+        {unreadCount > 0 && (
+          <span
+            key={unreadCount}
+            className="notification-badge notification-badge-arrive"
+          >
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
+        )}
       </button>
 
       <AnimatePresence>
@@ -170,7 +193,14 @@ function NotificationBell() {
 
           <div className="notification-list">
             {loading ? (
-              <div className="notification-empty">Loading...</div>
+              <div className="notification-skeleton" aria-hidden="true">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <div className="notification-skeleton-row" key={index}>
+                    <span className="skeleton-bar skeleton-bar-title" />
+                    <span className="skeleton-bar skeleton-bar-meta skeleton-bar-meta-short" />
+                  </div>
+                ))}
+              </div>
             ) : error ? (
               <div className="notification-empty notification-error">{error}</div>
             ) : notifications.length === 0 ? (

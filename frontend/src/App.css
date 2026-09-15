@@ -171,6 +171,22 @@
   border: 2px solid var(--surface);
 }
 
+@keyframes notification-pop {
+  0% {
+    transform: scale(0.5);
+  }
+  60% {
+    transform: scale(1.25);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.notification-badge-arrive {
+  animation: notification-pop 0.3s ease-out;
+}
+
 .notification-dropdown {
   position: absolute;
   top: calc(100% + 10px);
@@ -507,6 +523,65 @@
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.member-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.member-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.member-chip:hover {
+  border-color: var(--accent);
+}
+
+.member-chip.selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.member-chip input {
+  width: auto;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--accent);
+}
+
+.member-chip span {
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.member-chip small {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: capitalize;
+}
+
+.member-picker-skeleton {
+  min-height: 88px;
+}
+
+.form-hint {
+  font-size: 13px;
+  color: var(--text-muted);
 }
 
 .form-actions {
@@ -1570,6 +1645,36 @@
   }
 }
 
+.skeleton-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  min-height: 190px;
+}
+
+.skeleton-bar-badge {
+  width: 64px;
+  height: 16px;
+}
+
+.skeleton-form {
+  min-height: 280px;
+}
+
+.notification-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px;
+}
+
+.notification-skeleton-row {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
 .skeleton-stat {
   display: flex;
   flex-direction: column;
@@ -2368,4 +2473,54 @@
 
 .profile-save-btn {
   margin-top: 8px;
+}
+
+.profile-password-card {
+  align-items: stretch;
+}
+
+.profile-password-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 2px 0 4px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.profile-password-toggle:hover {
+  color: var(--accent);
+}
+
+.profile-password-toggle-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.profile-password-input {
+  position: relative;
+}
+
+.profile-password-input input {
+  width: 100%;
+  padding: 11px 40px 11px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.profile-password-input input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }

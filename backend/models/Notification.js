@@ -15,7 +15,16 @@ const notificationSchema = new Schema(
     },
     type: {
       type: String,
-      enum: ['task_assigned', 'status_changed', 'task_due_soon', 'project_assigned'],
+      enum: [
+        'task_assigned',
+        'status_changed',
+        'task_due_soon',
+        'project_assigned',
+        'task_created',
+        'task_updated',
+        'task_deleted',
+        'task_completed',
+      ],
       default: 'task_assigned',
     },
     relatedTask: {

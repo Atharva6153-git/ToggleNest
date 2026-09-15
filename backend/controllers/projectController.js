@@ -1,5 +1,6 @@
 const Project = require('../models/Project');
 const Notification = require('../models/Notification');
+const User = require('../models/User');
 
 const CREATE_FIELDS = ['name', 'description', 'deadline', 'members'];
 const UPDATE_FIELDS = ['name', 'description', 'deadline', 'members'];
@@ -20,6 +21,28 @@ exports.createProject = async (req, res, next) => {
     data.createdBy = req.user.userId;
     const project = new Project(data);
     const saved = await project.save();
+
+    const members = Array.isArray(data.members) ? data.members : [];
+    if (members.length) {
+      const recipients = await User.find({
+        _id: { $in: members, $ne: req.user.userId },
+        role: 'member',
+      }).select('_id');
+      if (recipients.length) {
+        try {
+          await Notification.insertMany(
+            recipients.map((member) => ({
+              recipient: member._id,
+              message: `You were added to project: ${saved.name}`,
+              type: 'project_assigned',
+            }))
+          );
+        } catch (notifErr) {
+          console.error('createProject: error creating notifications', notifErr);
+        }
+      }
+    }
+
     return res.status(201).json({ success: true, data: saved });
   } catch (err) {
     console.error('createProject error', err);

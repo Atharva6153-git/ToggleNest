@@ -1,15 +1,17 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { toast, Toaster } from 'react-hot-toast'
+import { toast } from 'react-hot-toast'
 import Layout from '../components/Layout'
 import PageTransition from '../components/PageTransition'
+import ProjectMemberPicker from '../components/ProjectMemberPicker'
 import { createProject } from '../api/projectApi'
 
 function CreateProject() {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [deadline, setDeadline] = useState('')
+  const [members, setMembers] = useState([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const navigate = useNavigate()
 
@@ -28,6 +30,7 @@ function CreateProject() {
         name,
         description,
         deadline: new Date(`${deadline}T00:00:00`).toISOString(),
+        members,
       })
       toast.success('Project created successfully!')
       navigate('/projects')
@@ -40,7 +43,6 @@ function CreateProject() {
 
   return (
     <Layout>
-      <Toaster position="top-right" />
       <PageTransition>
         <div className="page-container">
         <div className="form-wrapper">
@@ -81,6 +83,8 @@ function CreateProject() {
                   required
                 />
               </div>
+
+              <ProjectMemberPicker value={members} onChange={setMembers} />
 
               <div className="form-actions">
                 <motion.button
