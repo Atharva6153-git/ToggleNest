@@ -7,6 +7,7 @@ import { createTask, deleteTask, getTasks, updateTask, updateTaskStatus } from '
 import TaskCard from './TaskCard'
 import SkeletonCard from '../SkeletonCard'
 import FiltersBar from '../FiltersBar'
+import ConfirmModal from '../ConfirmModal'
 import TaskDetailsModal from './TaskDetailsModal'
 import TaskFormModal from './TaskFormModal'
 import PageTransition from '../PageTransition'
@@ -34,6 +35,7 @@ function KanbanBoard() {
   const [error, setError] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false)
   const [selectedTask, setSelectedTask] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [filters, setFilters] = useState({
@@ -139,19 +141,23 @@ function KanbanBoard() {
     }
   }
 
+  const confirmDeleteTask = () => {
+    if (!selectedTask?._id) return
+    setIsConfirmDeleteOpen(true)
+  }
+
   const handleDeleteTask = async () => {
     if (!selectedTask?._id) return
 
-    const shouldDelete = window.confirm(`Delete "${selectedTask.title}"?`)
-    if (!shouldDelete) return
-
     try {
       await deleteTask(selectedTask._id)
+      setIsConfirmDeleteOpen(false)
       setIsEditModalOpen(false)
       setSelectedTask(null)
       toast.success('Task deleted successfully')
       await fetchTasks()
     } catch (err) {
+      setIsConfirmDeleteOpen(false)
       toast.error(err?.response?.data?.message || 'Could not delete the task.')
     }
   }
@@ -235,7 +241,16 @@ function KanbanBoard() {
           setSelectedTask(null)
         }}
         onSubmit={handleUpdateTask}
-        onDelete={handleDeleteTask}
+        onDelete={confirmDeleteTask}
+      />
+
+      <ConfirmModal
+        isOpen={isConfirmDeleteOpen}
+        title="Delete Task"
+        message={`Are you sure you want to delete this task? This action cannot be undone.`}
+        isSubmitting={isSubmitting}
+        onConfirm={handleDeleteTask}
+        onCancel={() => setIsConfirmDeleteOpen(false)}
       />
 
       <div className="kanban-shell">

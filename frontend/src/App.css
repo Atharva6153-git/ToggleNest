@@ -1589,6 +1589,24 @@
   background: var(--danger-soft);
 }
 
+.confirm-modal {
+  max-width: 420px;
+}
+
+.confirm-modal-message {
+  color: var(--text-muted);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.confirm-modal-actions {
+  margin-top: 24px;
+}
+
+.confirm-modal-actions .danger-button {
+  margin-right: 0;
+}
+
 /* Dashboard */
 
 .dashboard-total {
