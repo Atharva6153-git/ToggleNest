@@ -4,6 +4,16 @@ function SkeletonCard({ variant = 'card', className = '' }) {
       className={`skeleton skeleton-${variant} ${className}`.trim()}
       aria-hidden="true"
     >
+      {variant === 'card' && (
+        <>
+          <span className="skeleton-bar skeleton-bar-badge" />
+          <span className="skeleton-bar skeleton-bar-title" />
+          <span className="skeleton-bar skeleton-bar-meta" />
+          <span className="skeleton-bar skeleton-bar-meta" />
+          <span className="skeleton-bar skeleton-bar-meta skeleton-bar-meta-short" />
+        </>
+      )}
+
       {variant === 'stat' && (
         <>
           <span className="skeleton-bar skeleton-bar-label" />

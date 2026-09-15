@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import Layout from '../components/Layout'
 import PageTransition from '../components/PageTransition'
+import SkeletonCard from '../components/SkeletonCard'
 import { getProjects } from '../api/projectApi'
 import { useAuth } from '../context/AuthContext'
 
@@ -69,7 +70,11 @@ const Projects = () => {
         </div>
 
         {loading ? (
-          <p className="empty-state">Loading projects...</p>
+          <div className="projects-grid" aria-label="Loading projects">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <SkeletonCard key={index} variant="card" />
+            ))}
+          </div>
         ) : error ? (
           <p className="empty-state">{error}</p>
         ) : projects.length === 0 ? (

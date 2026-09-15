@@ -449,6 +449,115 @@ router.put("/profile", protect, async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /auth/change-password:
+ *   put:
+ *     summary: Change the current user's password
+ *     description: >-
+ *       Verifies the current password, checks that the new password and its
+ *       confirmation match, then hashes and saves the new password.
+ *       Requires authentication.
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [currentPassword, newPassword, confirmNewPassword]
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *                 format: password
+ *                 example: OldPass123
+ *               newPassword:
+ *                 type: string
+ *                 format: password
+ *                 example: NewPass456
+ *               confirmNewPassword:
+ *                 type: string
+ *                 format: password
+ *                 example: NewPass456
+ *     responses:
+ *       200:
+ *         description: Password updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     message:
+ *                       type: string
+ *                       example: Password updated successfully
+ *       400:
+ *         description: Current password is incorrect, new password too short, or passwords do not match
+ *       404:
+ *         description: User not found
+ *       401:
+ *         description: Not authenticated
+ */
+// CHANGE PASSWORD
+router.put("/change-password", protect, async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword, confirmNewPassword } = req.body;
+
+    if (typeof currentPassword !== "string" || !currentPassword) {
+      const error = new Error("Current password is required");
+      error.statusCode = 400;
+      return next(error);
+    }
+
+    if (typeof newPassword !== "string" || newPassword.length < 6) {
+      const error = new Error("New password must be at least 6 characters");
+      error.statusCode = 400;
+      return next(error);
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      const error = new Error("New password and confirmation do not match");
+      error.statusCode = 400;
+      return next(error);
+    }
+
+    const user = await User.findById(req.user.userId);
+
+    if (!user) {
+      const error = new Error("User not found");
+      error.statusCode = 404;
+      return next(error);
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+
+    if (!isMatch) {
+      const error = new Error("Current password is incorrect");
+      error.statusCode = 400;
+      return next(error);
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    return res.json({
+      success: true,
+      data: {
+        message: "Password updated successfully",
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 // UPLOAD PROFILE PICTURE
 router.post(
   "/profile/picture",

@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { toast, Toaster } from 'react-hot-toast'
+import { toast } from 'react-hot-toast'
 import Layout from '../components/Layout'
 import PageTransition from '../components/PageTransition'
+import SkeletonCard from '../components/SkeletonCard'
+import ProjectMemberPicker from '../components/ProjectMemberPicker'
 import { getProject, updateProject, deleteProject } from '../api/projectApi'
 import { useAuth } from '../context/AuthContext'
 
@@ -15,6 +17,7 @@ function EditProject() {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [deadline, setDeadline] = useState('')
+  const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -25,6 +28,7 @@ function EditProject() {
         setName(project.name)
         setDescription(project.description || '')
         setDeadline(project.deadline ? project.deadline.slice(0, 10) : '')
+        setMembers((project.members || []).map((m) => m._id || m))
       } catch (err) {
         toast.error(err?.response?.data?.message || 'Failed to load the project.')
         navigate('/projects')
@@ -51,6 +55,7 @@ function EditProject() {
         name,
         description,
         deadline: new Date(`${deadline}T00:00:00`).toISOString(),
+        members,
       })
       toast.success('Project updated successfully!')
       navigate('/projects')
@@ -88,7 +93,11 @@ function EditProject() {
       <Layout>
         <PageTransition>
           <div className="page-container">
-            <p className="empty-state">Loading project...</p>
+            <div className="form-wrapper">
+              <div className="form-card">
+                <SkeletonCard variant="card" className="skeleton-form" />
+              </div>
+            </div>
           </div>
         </PageTransition>
       </Layout>
@@ -97,7 +106,6 @@ function EditProject() {
 
   return (
     <Layout>
-      <Toaster position="top-right" />
       <PageTransition>
         <div className="page-container">
         <div className="form-wrapper">
@@ -136,6 +144,8 @@ function EditProject() {
                   onChange={(e) => setDeadline(e.target.value)}
                 />
               </div>
+
+              <ProjectMemberPicker value={members} onChange={setMembers} />
 
               <div className="form-actions">
                 <motion.button
