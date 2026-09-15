@@ -15,6 +15,44 @@ const pick = (source, allowedFields) => {
   return result;
 };
 
+// Every project member plus every admin, minus the actor.
+const getProjectAudience = async (project, excludeUserId) => {
+  const audience = new Set();
+  for (const member of project.members || []) {
+    audience.add(String(member));
+  }
+  const admins = await User.find({ role: 'admin' }).select('_id');
+  for (const admin of admins) {
+    audience.add(String(admin._id));
+  }
+  audience.delete(String(excludeUserId));
+  return [...audience];
+};
+
+const formatDate = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString();
+};
+
+const buildProjectChangeDetails = (previous, updated) => {
+  const details = [];
+  if (!previous || !updated) return details;
+  if (previous.name !== updated.name) {
+    details.push(`name changed to "${updated.name}"`);
+  }
+  if (previous.description !== updated.description) {
+    details.push('description was updated');
+  }
+  const prevDeadline = formatDate(previous.deadline);
+  const newDeadline = formatDate(updated.deadline);
+  if (prevDeadline !== newDeadline) {
+    details.push(`deadline changed to ${newDeadline || 'none'}`);
+  }
+  return details;
+};
+
 exports.createProject = async (req, res, next) => {
   try {
     const data = pick(req.body, CREATE_FIELDS);
@@ -127,6 +165,11 @@ exports.updateProject = async (req, res, next) => {
     }
 
     const data = pick(req.body, UPDATE_FIELDS);
+    const previous = {
+      name: project.name,
+      description: project.description,
+      deadline: project.deadline,
+    };
 
     if (data.members) {
       const currentMembers = new Set(
@@ -156,6 +199,19 @@ exports.updateProject = async (req, res, next) => {
       error.statusCode = 404;
       return next(error);
     }
+
+    const details = buildProjectChangeDetails(previous, updated);
+    if (details.length) {
+      const audience = await getProjectAudience(updated, req.user.userId);
+      await Notification.insertMany(
+        audience.map((recipient) => ({
+          recipient,
+          message: `Project "${updated.name}" was updated: ${details.join(', ')}`,
+          type: 'project_updated',
+        }))
+      );
+    }
+
     return res.json({ success: true, data: updated });
   } catch (err) {
     console.error('updateProject error', err);
@@ -179,6 +235,16 @@ exports.deleteProject = async (req, res, next) => {
       error.statusCode = 403;
       return next(error);
     }
+
+    const audience = await getProjectAudience(project, req.user.userId);
+    await Notification.insertMany(
+      audience.map((recipient) => ({
+        recipient,
+        message: `Project "${project.name}" was deleted`,
+        type: 'project_deleted',
+      }))
+    );
+
     await Project.findByIdAndDelete(id);
     return res.json({ success: true, data: { message: 'Project deleted' } });
   } catch (err) {
