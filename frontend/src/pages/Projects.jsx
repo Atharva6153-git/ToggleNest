@@ -1,9 +1,10 @@
 import { useNavigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import Layout from '../components/Layout'
 import PageTransition from '../components/PageTransition'
 import SkeletonCard from '../components/SkeletonCard'
+import FiltersBar from '../components/FiltersBar'
 import { getProjects } from '../api/projectApi'
 import { useAuth } from '../context/AuthContext'
 
@@ -26,21 +27,35 @@ const Projects = () => {
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
 
   useEffect(() => {
-    const loadProjects = async () => {
-      try {
-        const data = await getProjects()
-        setProjects(data)
-      } catch (err) {
-        setError(err?.response?.data?.message || 'Failed to load projects.')
-      } finally {
-        setLoading(false)
-      }
-    }
+    const timeout = setTimeout(() => setDebouncedSearch(search), 400)
+    return () => clearTimeout(timeout)
+  }, [search])
 
+  const loadProjects = useCallback(async () => {
+    try {
+      const params = debouncedSearch ? { search: debouncedSearch } : {}
+      const data = await getProjects(params)
+      setProjects(data)
+      setError('')
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to load projects.')
+    } finally {
+      setLoading(false)
+    }
+  }, [debouncedSearch])
+
+  useEffect(() => {
     loadProjects()
-  }, [])
+  }, [loadProjects])
+
+  const clearFilters = () => {
+    setSearch('')
+    setDebouncedSearch('')
+  }
 
   const formattedDeadline = (date) => {
     if (!date) return 'No deadline'
@@ -69,6 +84,13 @@ const Projects = () => {
           )}
         </div>
 
+        <FiltersBar
+          searchValue={search}
+          onSearchChange={setSearch}
+          onClear={clearFilters}
+          searchPlaceholder="Search projects..."
+        />
+
         {loading ? (
           <div className="projects-grid" aria-label="Loading projects">
             {Array.from({ length: 4 }).map((_, index) => (
@@ -79,11 +101,13 @@ const Projects = () => {
           <p className="empty-state">{error}</p>
         ) : projects.length === 0 ? (
           <div className="empty-state">
-            <h2>No projects yet</h2>
+            <h2>{debouncedSearch ? 'No matching projects' : 'No projects yet'}</h2>
             <p>
-              {isAdmin
-                ? 'Create your first project to get started.'
-                : "You haven't been added to any projects yet."}
+              {debouncedSearch
+                ? 'Try adjusting your search to find what you are looking for.'
+                : isAdmin
+                  ? 'Create your first project to get started.'
+                  : "You haven't been added to any projects yet."}
             </p>
           </div>
         ) : (
