@@ -1256,6 +1256,38 @@
   margin-bottom: 10px;
 }
 
+.kanban-card-badges {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.kanban-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--border);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  user-select: none;
+  cursor: default;
+}
+
+.kanban-avatar-unassigned {
+  color: var(--text-muted);
+  background: var(--surface-hover);
+}
+
 .kanban-task-title {
   font-size: 15px;
 }
@@ -1293,6 +1325,33 @@
 
 .kanban-card-meta strong {
   font-weight: 600;
+}
+
+.kanban-due {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.kanban-due.is-overdue {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.kanban-overdue-tag {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--danger);
+  background: var(--danger-soft);
+  border-radius: 999px;
+  padding: 2px 7px;
+  margin-left: 2px;
+}
+
+.kanban-due.is-overdue svg {
+  color: var(--danger);
 }
 
 /* Modals */
