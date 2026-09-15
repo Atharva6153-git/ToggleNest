@@ -28,6 +28,8 @@ function SkeletonCard({ variant = 'card', className = '' }) {
           <span className="skeleton-bar skeleton-bar-meta skeleton-bar-meta-short" />
         </>
       )}
+
+      {variant === 'chart' && <span className="skeleton-bar skeleton-bar-chart" />}
     </div>
   )
 }

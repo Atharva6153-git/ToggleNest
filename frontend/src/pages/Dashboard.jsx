@@ -5,6 +5,7 @@ import 'react-circular-progressbar/dist/styles.css'
 import Layout from '../components/Layout'
 import PageTransition from '../components/PageTransition'
 import SkeletonCard from '../components/SkeletonCard'
+import { TaskPriorityBar, TaskStatusDonut } from '../components/charts/DashboardCharts'
 import { getDashboardSummary } from '../api/dashboardApi'
 
 const Dashboard = () => {
@@ -43,6 +44,16 @@ const Dashboard = () => {
 
   const completion = summary?.completionPercentage ?? 0
 
+  const statusChartData = statusCards.map((card) => ({
+    name: card.label,
+    value: card.value,
+  }))
+
+  const priorityChartData = priorityCards.map((card) => ({
+    name: card.label,
+    value: card.value,
+  }))
+
   return (
     <Layout>
       <PageTransition>
@@ -73,19 +84,25 @@ const Dashboard = () => {
 
             <div className="dashboard-section">
               <h2>Tasks by Status</h2>
-              <div className="dashboard-grid">
-                {Array.from({ length: 3 }).map((_, index) => (
-                  <SkeletonCard key={index} variant="stat" />
-                ))}
+              <div className="dashboard-chart-row">
+                <SkeletonCard variant="chart" />
+                <div className="dashboard-grid dashboard-grid-stacked">
+                  {Array.from({ length: 3 }).map((_, index) => (
+                    <SkeletonCard key={index} variant="stat" />
+                  ))}
+                </div>
               </div>
             </div>
 
             <div className="dashboard-section">
               <h2>Tasks by Priority</h2>
-              <div className="dashboard-grid">
-                {Array.from({ length: 3 }).map((_, index) => (
-                  <SkeletonCard key={index} variant="stat" />
-                ))}
+              <div className="dashboard-chart-row">
+                <SkeletonCard variant="chart" />
+                <div className="dashboard-grid dashboard-grid-stacked">
+                  {Array.from({ length: 3 }).map((_, index) => (
+                    <SkeletonCard key={index} variant="stat" />
+                  ))}
+                </div>
               </div>
             </div>
           </>
@@ -114,28 +131,38 @@ const Dashboard = () => {
 
             <div className="dashboard-section">
               <h2>Tasks by Status</h2>
-              <div className="dashboard-grid">
-                {statusCards.map((card) => (
-                  <div className="stat-card" key={card.label}>
-                    <small>{card.label}</small>
-                    <p className="stat-value">{card.value}</p>
-                  </div>
-                ))}
+              <div className="dashboard-chart-row">
+                <div className="chart-card">
+                  <TaskStatusDonut data={statusChartData} />
+                </div>
+                <div className="dashboard-grid dashboard-grid-stacked">
+                  {statusCards.map((card) => (
+                    <div className="stat-card" key={card.label}>
+                      <small>{card.label}</small>
+                      <p className="stat-value">{card.value}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
             <div className="dashboard-section">
               <h2>Tasks by Priority</h2>
-              <div className="dashboard-grid">
-                {priorityCards.map((card) => (
-                  <div
-                    className={`stat-card stat-priority-${card.label.toLowerCase()}`}
-                    key={card.label}
-                  >
-                    <small>{card.label}</small>
-                    <p className="stat-value">{card.value}</p>
-                  </div>
-                ))}
+              <div className="dashboard-chart-row">
+                <div className="chart-card">
+                  <TaskPriorityBar data={priorityChartData} />
+                </div>
+                <div className="dashboard-grid dashboard-grid-stacked">
+                  {priorityCards.map((card) => (
+                    <div
+                      className={`stat-card stat-priority-${card.label.toLowerCase()}`}
+                      key={card.label}
+                    >
+                      <small>{card.label}</small>
+                      <p className="stat-value">{card.value}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </>
