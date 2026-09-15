@@ -6,6 +6,7 @@ import Layout from '../components/Layout'
 import PageTransition from '../components/PageTransition'
 import SkeletonCard from '../components/SkeletonCard'
 import ProjectMemberPicker from '../components/ProjectMemberPicker'
+import ConfirmModal from '../components/ConfirmModal'
 import { getProject, updateProject, deleteProject } from '../api/projectApi'
 import { useAuth } from '../context/AuthContext'
 
@@ -20,6 +21,7 @@ function EditProject() {
   const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false)
 
   useEffect(() => {
     const loadProject = async () => {
@@ -67,21 +69,15 @@ function EditProject() {
   }
 
   const handleDelete = async () => {
-    const confirmDelete = window.confirm(
-      'Are you sure you want to delete this project?'
-    )
-
-    if (!confirmDelete) {
-      return
-    }
-
     setIsSubmitting(true)
 
     try {
       await deleteProject(id)
+      setIsConfirmDeleteOpen(false)
       toast.success('Project deleted successfully!')
       navigate('/projects')
     } catch (err) {
+      setIsConfirmDeleteOpen(false)
       toast.error(err?.response?.data?.message || 'Could not delete the project.')
     } finally {
       setIsSubmitting(false)
@@ -162,7 +158,7 @@ function EditProject() {
                   <button
                     className="delete-btn"
                     type="button"
-                    onClick={handleDelete}
+                    onClick={() => setIsConfirmDeleteOpen(true)}
                     disabled={isSubmitting}
                   >
                     Delete Project
@@ -180,6 +176,15 @@ function EditProject() {
             </form>
           </div>
         </div>
+
+        <ConfirmModal
+          isOpen={isConfirmDeleteOpen}
+          title="Delete Project"
+          message="Are you sure you want to delete this project? This action cannot be undone."
+          isSubmitting={isSubmitting}
+          onConfirm={handleDelete}
+          onCancel={() => setIsConfirmDeleteOpen(false)}
+        />
         </div>
       </PageTransition>
     </Layout>
