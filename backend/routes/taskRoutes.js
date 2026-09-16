@@ -115,16 +115,17 @@ router.post('/', validateTaskPayload, handleValidationErrors, taskController.cre
  * @swagger
  * /tasks:
  *   get:
- *     summary: List tasks with filtering and pagination
- *     description: Supports filtering by project, priority, status, assignee, and title search. Requires authentication.
+ *     summary: List tasks for a project with filtering and pagination
+ *     description: Tasks are strictly scoped to a project — a valid project id is required. Supports filtering by priority, status, assignee, and title search. Requires authentication.
  *     tags: [Tasks]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: project
+ *         required: true
  *         schema: { type: string }
- *         description: Filter by project ID
+ *         description: Project ID — tasks are always filtered by project
  *       - in: query
  *         name: priority
  *         schema: { type: string, enum: [Low, Medium, High] }

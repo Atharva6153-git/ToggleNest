@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Task = require('../models/Task');
 const User = require('../models/User');
 const Project = require('../models/Project');
@@ -147,7 +148,13 @@ exports.getTasks = async (req, res, next) => {
     const assignedToValue = getLiteralString(assignedTo);
     const searchValue = getLiteralString(search);
 
-    if (projectValue) filter.project = { $eq: projectValue };
+    if (!projectValue || !mongoose.isValidObjectId(projectValue)) {
+      const error = new Error('Valid project id is required');
+      error.statusCode = 400;
+      return next(error);
+    }
+
+    filter.project = { $eq: projectValue };
     if (priorityValue) filter.priority = { $eq: priorityValue };
     if (statusValue) filter.status = { $eq: statusValue };
     if (assignedToValue) filter.assignedTo = { $eq: assignedToValue };

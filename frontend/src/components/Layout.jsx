@@ -28,10 +28,6 @@ function Layout({ children }) {
               Create Project
             </button>
           )}
-
-          <button onClick={() => navigate('/kanban')}>
-            Kanban Board
-          </button>
         </nav>
       </aside>
 

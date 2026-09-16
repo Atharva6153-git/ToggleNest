@@ -54,6 +54,12 @@ function KanbanBoard() {
   }, [filters.search])
 
   const fetchTasks = useCallback(async () => {
+    if (!projectId) {
+      setTasks([])
+      setLoading(false)
+      return
+    }
+
     try {
       const params = {
         search: debouncedSearch || undefined,
@@ -288,7 +294,9 @@ function KanbanBoard() {
           searchPlaceholder="Search tasks..."
         />
 
-        {loading ? (
+        {!projectId ? (
+          <p className="kanban-state">Select a project to open its Kanban board.</p>
+        ) : loading ? (
           <section className="kanban-columns" aria-label="Loading board">
             {columns.map((column) => (
               <div className="kanban-column" key={column.id}>
