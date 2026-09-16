@@ -81,6 +81,13 @@ function ProjectDiscussion({ projectId }) {
   const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
+    if (!projectId) {
+      setComments([])
+      setError('')
+      setLoading(false)
+      return
+    }
+
     let isMounted = true
 
     const fetchComments = async () => {
@@ -111,7 +118,7 @@ function ProjectDiscussion({ projectId }) {
   const handleSubmit = async (event) => {
     event.preventDefault()
     const trimmed = text.trim()
-    if (!trimmed) return
+    if (!projectId || !trimmed) return
 
     setIsSubmitting(true)
 
@@ -156,7 +163,11 @@ function ProjectDiscussion({ projectId }) {
         )}
       </header>
 
-      {loading ? (
+      {!projectId ? (
+        <p className="discussion-state">
+          Select a project to view its discussion.
+        </p>
+      ) : loading ? (
         <p className="discussion-state">Loading comments...</p>
       ) : error ? (
         <p className="discussion-state discussion-state-error">{error}</p>
@@ -198,7 +209,8 @@ function ProjectDiscussion({ projectId }) {
         </ul>
       )}
 
-      <form className="discussion-form" onSubmit={handleSubmit}>
+      {projectId && (
+        <form className="discussion-form" onSubmit={handleSubmit}>
         <textarea
           className="discussion-input"
           placeholder="Write a comment..."
@@ -218,6 +230,7 @@ function ProjectDiscussion({ projectId }) {
           {isSubmitting ? 'Posting...' : 'Send'}
         </button>
       </form>
+      )}
 
       <ConfirmModal
         isOpen={Boolean(commentToDelete)}
