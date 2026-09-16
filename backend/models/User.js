@@ -31,6 +31,24 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+
+    profileComplete: {
+      type: Boolean,
+      default: false,
+    },
+
+    jobTitle: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+
+    bio: {
+      type: String,
+      trim: true,
+      maxlength: 250,
+      default: null,
+    },
   },
   {
     timestamps: true,

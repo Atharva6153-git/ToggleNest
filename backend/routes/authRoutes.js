@@ -368,7 +368,7 @@ router.get("/users", protect, async (req, res, next) => {
 router.get("/profile", protect, async (req, res, next) => {
   try {
     const user = await User.findById(req.user.userId).select(
-      "name email role profilePicture createdAt"
+      "name email role profilePicture profileComplete jobTitle bio createdAt"
     );
 
     if (!user) {
@@ -392,7 +392,7 @@ router.get("/profile", protect, async (req, res, next) => {
 // UPDATE PROFILE
 router.put("/profile", protect, async (req, res, next) => {
   try {
-    const { name, password, newPassword } = req.body;
+    const { name, jobTitle, bio, password, newPassword } = req.body;
     const user = await User.findById(req.user.userId);
 
     if (!user) {
@@ -408,6 +408,24 @@ router.put("/profile", protect, async (req, res, next) => {
         return next(error);
       }
       user.name = name.trim();
+    }
+
+    if (typeof jobTitle === "string") {
+      if (jobTitle.length > 100) {
+        const error = new Error("Job title cannot exceed 100 characters");
+        error.statusCode = 400;
+        return next(error);
+      }
+      user.jobTitle = jobTitle.trim();
+    }
+
+    if (typeof bio === "string") {
+      if (bio.length > 250) {
+        const error = new Error("Bio cannot exceed 250 characters");
+        error.statusCode = 400;
+        return next(error);
+      }
+      user.bio = bio.trim();
     }
 
     if (password || newPassword) {
@@ -428,6 +446,7 @@ router.put("/profile", protect, async (req, res, next) => {
       user.password = await bcrypt.hash(newPw, 10);
     }
 
+    user.profileComplete = Boolean(user.name && user.profilePicture);
     await user.save();
 
     return res.json({
@@ -440,6 +459,9 @@ router.put("/profile", protect, async (req, res, next) => {
           email: user.email,
           role: user.role,
           profilePicture: user.profilePicture,
+          profileComplete: user.profileComplete,
+          jobTitle: user.jobTitle,
+          bio: user.bio,
           createdAt: user.createdAt,
         },
       },
@@ -601,6 +623,7 @@ router.post(
       }
 
       user.profilePicture = req.file.path;
+      user.profileComplete = Boolean(user.name && user.profilePicture);
       await user.save();
 
       return res.json({
@@ -608,6 +631,7 @@ router.post(
         data: {
           message: "Profile picture updated successfully",
           profilePicture: user.profilePicture,
+          profileComplete: user.profileComplete,
         },
       });
     } catch (error) {
@@ -660,7 +684,7 @@ router.post(
 // CURRENT USER (fresh DB lookup — source of truth for the role)
 router.get('/me', protect, async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.userId).select('name email role profilePicture');
+    const user = await User.findById(req.user.userId).select('name email role profilePicture profileComplete jobTitle bio');
 
     if (!user) {
       const error = new Error('User not found');
@@ -676,6 +700,9 @@ router.get('/me', protect, async (req, res, next) => {
         email: user.email,
         role: user.role,
         profilePicture: user.profilePicture,
+        profileComplete: user.profileComplete,
+        jobTitle: user.jobTitle,
+        bio: user.bio,
       },
     });
   } catch (error) {
