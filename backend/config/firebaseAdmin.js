@@ -4,12 +4,27 @@ const { initializeApp, getApps, cert } = require("firebase-admin/app");
 const { getAuth } = require("firebase-admin/auth");
 
 const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
+const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
 
 if (!getApps().length) {
-  if (!serviceAccountPath) {
+  if (serviceAccountJson && serviceAccountJson.trim()) {
+    try {
+      const serviceAccount = JSON.parse(serviceAccountJson);
+      initializeApp({
+        credential: cert(serviceAccount),
+      });
+      console.log("Firebase Admin SDK initialized from FIREBASE_SERVICE_ACCOUNT_JSON");
+    } catch (error) {
+      console.warn(
+        `Failed to initialize Firebase Admin SDK from FIREBASE_SERVICE_ACCOUNT_JSON: ${error.message}. ` +
+          "Firebase login (POST /api/auth/firebase-login) will return an error until a valid service account JSON is provided."
+      );
+    }
+  } else if (!serviceAccountPath) {
     console.warn(
-      "Firebase Admin SDK is NOT initialized: FIREBASE_SERVICE_ACCOUNT_PATH is not set in the environment. " +
-        "Add FIREBASE_SERVICE_ACCOUNT_PATH=<path> to .env and place your service account JSON there."
+      "Firebase Admin SDK is NOT initialized: neither FIREBASE_SERVICE_ACCOUNT_JSON nor FIREBASE_SERVICE_ACCOUNT_PATH is set. " +
+        "Add FIREBASE_SERVICE_ACCOUNT_JSON=<service account JSON string> (preferred for hosting platforms) or " +
+        "FIREBASE_SERVICE_ACCOUNT_PATH=<path> to .env and place your service account JSON there."
     );
   } else if (!fs.existsSync(serviceAccountPath)) {
     console.warn(

@@ -28,6 +28,31 @@ const sanitizeMongoKeys = (obj) => {
 
 const app = express();
 
+const CLIENT_URLS = (process.env.CLIENT_URLS || '')
+  .split(',')
+  .map((url) => url.trim())
+  .filter(Boolean);
+
+const allowedOrigins = new Set([
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  ...CLIENT_URLS,
+]);
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      // Allow requests with no Origin (curl, server-to-server, mobile clients)
+      if (!origin || allowedOrigins.has(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`Origin ${origin} not allowed by CORS`));
+      }
+    },
+    credentials: true,
+  })
+);
+
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -39,7 +64,6 @@ const limiter = rateLimit({
 });
 
 app.use(express.json());
-app.use(cors());
 app.use(helmet());
 app.use((req, res, next) => {
   sanitizeMongoKeys(req.body);
