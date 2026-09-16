@@ -1,5 +1,5 @@
 import axios from 'axios'
-import axiosInstance, { TOKEN_KEY } from './axiosInstance'
+import axiosInstance, { TOKEN_KEY, API_BASE_URL } from './axiosInstance'
 
 export const register = async (userData) => {
   const response = await axiosInstance.post('/auth/register', userData)
@@ -44,9 +44,8 @@ export const changePassword = async (payload) => {
 
 export const uploadProfilePicture = async (formData) => {
   const token = localStorage.getItem(TOKEN_KEY)
-  const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
-  const response = await axios.post(`${baseURL}/auth/profile/picture`, formData, {
+  const response = await axios.post(`${API_BASE_URL}/auth/profile/picture`, formData, {
     headers: { Authorization: `Bearer ${token}` },
   })
   return response.data.data
