@@ -179,6 +179,7 @@ const options = {
                   },
                 },
                 completionPercentage: { type: 'number', example: 25 },
+                overdueTasks: { type: 'integer', example: 2 },
               },
             },
           },
