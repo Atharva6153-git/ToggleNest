@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Send, Trash2 } from 'lucide-react'
+import { Send, Trash2, MessageSquare } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { getComments, createComment, deleteComment } from '../../api/commentApi'
 import { useAuth } from '../../context/AuthContext'
-import ConfirmModal from '../ConfirmModal'
+import ConfirmDialog from '../ConfirmDialog'
+import EmptyState from '../EmptyState'
 
 const AVATAR_COLORS = ['#ef4444', '#f59e0b', '#3b82f6', '#8b5cf6', '#10b981', '#ec4899', '#06b6d4']
 
@@ -178,7 +179,12 @@ function ProjectDiscussion({ projectId }) {
       ) : error ? (
         <p className="discussion-state discussion-state-error">{error}</p>
       ) : comments.length === 0 ? (
-        <p className="discussion-state">No comments yet. Start the discussion below.</p>
+        <EmptyState
+          compact
+          icon={MessageSquare}
+          heading="Be the first to comment"
+          description="Start the discussion below."
+        />
       ) : (
         <ul className="discussion-list">
           {comments.map((comment) => {
@@ -238,10 +244,10 @@ function ProjectDiscussion({ projectId }) {
       </form>
       )}
 
-      <ConfirmModal
+      <ConfirmDialog
         isOpen={Boolean(commentToDelete)}
         title="Delete Comment"
-        message="Are you sure you want to delete this comment? This action cannot be undone."
+        message="Delete this comment?"
         isSubmitting={isDeleting}
         onConfirm={handleDelete}
         onCancel={() => setCommentToDelete(null)}

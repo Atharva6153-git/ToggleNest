@@ -3,12 +3,13 @@ import { useParams } from 'react-router-dom'
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd'
 import { motion } from 'framer-motion'
 import { toast } from 'react-hot-toast'
-import { Plus } from 'lucide-react'
+import { Plus, ClipboardList } from 'lucide-react'
 import { createTask, deleteTask, getTasks, updateTask, updateTaskStatus } from '../../api/taskApi'
 import TaskCard from './TaskCard'
 import SkeletonCard from '../SkeletonCard'
 import FiltersBar from '../FiltersBar'
-import ConfirmModal from '../ConfirmModal'
+import ConfirmDialog from '../ConfirmDialog'
+import EmptyState from '../EmptyState'
 import TaskDetailsModal from './TaskDetailsModal'
 import TaskFormModal from './TaskFormModal'
 import ProjectDiscussion from './ProjectDiscussion'
@@ -252,10 +253,10 @@ function KanbanBoard() {
         onDelete={confirmDeleteTask}
       />
 
-      <ConfirmModal
+      <ConfirmDialog
         isOpen={isConfirmDeleteOpen}
         title="Delete Task"
-        message={`Are you sure you want to delete this task? This action cannot be undone.`}
+        message="Delete this task? This cannot be undone."
         isSubmitting={isSubmitting}
         onConfirm={handleDeleteTask}
         onCancel={() => setIsConfirmDeleteOpen(false)}
@@ -359,7 +360,11 @@ function KanbanBoard() {
                               </Draggable>
                             ))
                           ) : (
-                            <p className="kanban-empty-state">No tasks in this column.</p>
+                            <EmptyState
+                              compact
+                              icon={ClipboardList}
+                              heading="No tasks here"
+                            />
                           )}
                           {provided.placeholder}
                         </motion.div>

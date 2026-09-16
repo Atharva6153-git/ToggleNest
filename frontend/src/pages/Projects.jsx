@@ -1,10 +1,12 @@
 import { useNavigate } from 'react-router-dom'
 import { useCallback, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
+import { FolderOpen } from 'lucide-react'
 import Layout from '../components/Layout'
 import PageTransition from '../components/PageTransition'
 import SkeletonCard from '../components/SkeletonCard'
 import FiltersBar from '../components/FiltersBar'
+import EmptyState from '../components/EmptyState'
 import { getProjects } from '../api/projectApi'
 import { useAuth } from '../context/AuthContext'
 
@@ -100,16 +102,25 @@ const Projects = () => {
         ) : error ? (
           <p className="empty-state">{error}</p>
         ) : projects.length === 0 ? (
-          <div className="empty-state">
-            <h2>{debouncedSearch ? 'No matching projects' : 'No projects yet'}</h2>
-            <p>
-              {debouncedSearch
+          <EmptyState
+            icon={FolderOpen}
+            heading={debouncedSearch ? 'No matching projects' : 'No projects yet'}
+            description={
+              debouncedSearch
                 ? 'Try adjusting your search to find what you are looking for.'
                 : isAdmin
                   ? 'Create your first project to get started.'
-                  : "You haven't been added to any projects yet."}
-            </p>
-          </div>
+                  : "You haven't been added to any projects yet."
+            }
+            actionLabel={
+              isAdmin && !debouncedSearch ? 'Create your first project' : undefined
+            }
+            onAction={
+              isAdmin && !debouncedSearch
+                ? () => navigate('/projects/create')
+                : undefined
+            }
+          />
         ) : (
           <motion.div
             className="projects-grid"

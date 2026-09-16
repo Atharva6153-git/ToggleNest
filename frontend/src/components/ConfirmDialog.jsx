@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion'
 
-function ConfirmModal({
+function ConfirmDialog({
   isOpen,
   title,
   message,
@@ -31,7 +31,12 @@ function ConfirmModal({
           >
             <div className="modal-header">
               <h2>{title}</h2>
-              <button type="button" className="close-button" onClick={onCancel} aria-label="Close">
+              <button
+                type="button"
+                className="close-button"
+                onClick={onCancel}
+                aria-label="Close"
+              >
                 ×
               </button>
             </div>
@@ -63,4 +68,4 @@ function ConfirmModal({
   )
 }
 
-export default ConfirmModal
+export default ConfirmDialog
