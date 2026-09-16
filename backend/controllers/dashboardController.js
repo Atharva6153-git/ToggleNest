@@ -37,6 +37,11 @@ exports.getDashboardSummary = async (req, res, next) => {
     const doneTasks = statusCounts['Done'] || 0;
     const completionPercentage = totalTasks === 0 ? 0 : Number(((doneTasks / totalTasks) * 100).toFixed(2));
 
+    const now = new Date();
+    const overdueTasks = tasks.filter(
+      (task) => task.status !== 'Done' && task.dueDate && new Date(task.dueDate) < now
+    ).length;
+
     return res.json({
       success: true,
       data: {
@@ -44,6 +49,7 @@ exports.getDashboardSummary = async (req, res, next) => {
         tasksByStatus: statusCounts,
         tasksByPriority: priorityCounts,
         completionPercentage,
+        overdueTasks,
       },
     });
   } catch (err) {
