@@ -90,28 +90,34 @@ function ProjectDiscussion({ projectId }) {
 
     let isMounted = true
 
-    const fetchComments = async () => {
+    const hasChanged = (current, fresh) =>
+      current.length !== fresh.length ||
+      current[current.length - 1]?._id !== fresh[fresh.length - 1]?._id
+
+    const fetchComments = async ({ silent = false } = {}) => {
       try {
         const data = await getComments(projectId)
-        if (isMounted) {
-          setComments(Array.isArray(data) ? data : [])
-          setError('')
-        }
+        if (!isMounted) return
+        const fresh = Array.isArray(data) ? data : []
+        setComments((current) => (hasChanged(current, fresh) ? fresh : current))
+        setError('')
       } catch (err) {
-        if (isMounted) {
+        if (isMounted && !silent) {
           setError(err?.response?.data?.message || 'Failed to load comments.')
         }
       } finally {
-        if (isMounted) {
+        if (isMounted && !silent) {
           setLoading(false)
         }
       }
     }
 
     fetchComments()
+    const pollInterval = setInterval(() => fetchComments({ silent: true }), 3000)
 
     return () => {
       isMounted = false
+      clearInterval(pollInterval)
     }
   }, [projectId])
 
