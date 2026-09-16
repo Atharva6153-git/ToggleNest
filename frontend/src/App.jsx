@@ -81,11 +81,7 @@ function App() {
       />
       <Route
         path="/kanban"
-        element={
-          <RequireAuth>
-            <KanbanBoardPage />
-          </RequireAuth>
-        }
+        element={<Navigate to="/projects" replace />}
       />
       <Route
         path="/projects/:id/board"

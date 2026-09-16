@@ -62,19 +62,35 @@ describe('Task controller', () => {
     expect(res.body.data.priority).toBe('High');
   });
 
-  it('gets all tasks with pagination metadata', async () => {
+  it('returns 400 when no project id is provided', async () => {
+    const res = await request(app).get('/api/tasks?page=1&limit=10');
+
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toBe('Valid project id is required');
+  });
+
+  it('returns only the given project\'s tasks with pagination metadata', async () => {
+    const projectA = new mongoose.Types.ObjectId();
+    const projectB = new mongoose.Types.ObjectId();
+
     await Task.insertMany([
-      { title: 'Task 1', status: 'To-Do', priority: 'Low' },
-      { title: 'Task 2', status: 'In Progress', priority: 'Medium' },
+      { title: 'Task A1', status: 'To-Do', priority: 'Low', project: projectA },
+      { title: 'Task A2', status: 'In Progress', priority: 'Medium', project: projectA },
+      { title: 'Task B1', status: 'Done', priority: 'High', project: projectB },
     ]);
 
-    const res = await request(app).get('/api/tasks?page=1&limit=10');
+    const res = await request(app).get(
+      `/api/tasks?project=${projectA}&page=1&limit=10`
+    );
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(Array.isArray(res.body.data)).toBe(true);
     expect(res.body.data).toHaveLength(2);
     expect(res.body.pagination.total).toBe(2);
+    res.body.data.forEach((task) => {
+      expect(String(task.project)).toBe(String(projectA));
+    });
   });
 
   it('gets a task by id', async () => {
