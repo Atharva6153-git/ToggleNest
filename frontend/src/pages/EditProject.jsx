@@ -6,7 +6,7 @@ import Layout from '../components/Layout'
 import PageTransition from '../components/PageTransition'
 import SkeletonCard from '../components/SkeletonCard'
 import ProjectMemberPicker from '../components/ProjectMemberPicker'
-import ConfirmModal from '../components/ConfirmModal'
+import ConfirmDialog from '../components/ConfirmDialog'
 import { getProject, updateProject, deleteProject } from '../api/projectApi'
 import { useAuth } from '../context/AuthContext'
 
@@ -177,10 +177,10 @@ function EditProject() {
           </div>
         </div>
 
-        <ConfirmModal
+        <ConfirmDialog
           isOpen={isConfirmDeleteOpen}
           title="Delete Project"
-          message="Are you sure you want to delete this project? This action cannot be undone."
+          message="Delete this project? All its tasks will also be affected."
           isSubmitting={isSubmitting}
           onConfirm={handleDelete}
           onCancel={() => setIsConfirmDeleteOpen(false)}

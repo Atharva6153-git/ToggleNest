@@ -8,7 +8,7 @@ import PageTransition from '../components/PageTransition'
 import SkeletonCard from '../components/SkeletonCard'
 import ProjectDiscussion from '../components/kanban/ProjectDiscussion'
 import ProjectMemberPicker from '../components/ProjectMemberPicker'
-import ConfirmModal from '../components/ConfirmModal'
+import ConfirmDialog from '../components/ConfirmDialog'
 import { useAuth } from '../context/AuthContext'
 import { getProject, updateProject, deleteProject } from '../api/projectApi'
 import { getDashboardSummary } from '../api/dashboardApi'
@@ -411,10 +411,10 @@ function ProjectDetail() {
               </div>
 
               {/* ---- Modals ---- */}
-              <ConfirmModal
+              <ConfirmDialog
                 isOpen={deleteOpen}
                 title="Delete Project"
-                message="Are you sure you want to delete this project? All tasks, comments and activity will be removed. This action cannot be undone."
+                message="Delete this project? All its tasks will also be affected."
                 isSubmitting={deleting}
                 onConfirm={handleDeleteProject}
                 onCancel={() => setDeleteOpen(false)}

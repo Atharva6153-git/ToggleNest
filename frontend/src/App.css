@@ -548,6 +548,70 @@
   margin-bottom: 6px;
 }
 
+.empty-state-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  padding: 48px 24px;
+  gap: 6px;
+}
+
+.empty-state-block-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+
+.empty-state-block-heading {
+  color: var(--text);
+  font-size: 18px;
+  margin: 0;
+}
+
+.empty-state-block-desc {
+  font-size: 13px;
+  margin: 0;
+  max-width: 340px;
+  line-height: 1.5;
+}
+
+.empty-state-block-action {
+  margin-top: 14px;
+}
+
+.empty-state-block-compact {
+  background: none;
+  border: none;
+  padding: 14px 8px;
+}
+
+.empty-state-block-compact .empty-state-block-icon {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 6px;
+}
+
+.empty-state-block-compact .empty-state-block-heading {
+  font-size: 13px;
+}
+
+.empty-state-block-compact .empty-state-block-desc {
+  font-size: 12px;
+}
+
 /* Forms */
 
 .form-wrapper {

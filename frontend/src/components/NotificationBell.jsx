@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Inbox } from 'lucide-react'
 import { getNotifications, markAsRead, markAllAsRead } from '../api/notificationApi'
 import { TOKEN_KEY } from '../api/axiosInstance'
+import EmptyState from './EmptyState'
 
 function formatTime(timestamp) {
   const date = new Date(timestamp)
@@ -204,7 +206,12 @@ function NotificationBell() {
             ) : error ? (
               <div className="notification-empty notification-error">{error}</div>
             ) : notifications.length === 0 ? (
-              <div className="notification-empty">No notifications</div>
+              <EmptyState
+                compact
+                icon={Inbox}
+                heading="You're all caught up"
+                description="No new notifications right now."
+              />
             ) : (
               notifications.map((n) => (
                 <button
