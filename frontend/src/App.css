@@ -2893,3 +2893,197 @@
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
+
+/* --- Project Discussion --- */
+
+.discussion-card {
+  margin-top: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.discussion-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.discussion-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.discussion-count {
+  background: var(--surface-hover);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 2px 10px;
+  border: 1px solid var(--border);
+  line-height: 1.4;
+}
+
+.discussion-state {
+  color: var(--text-muted);
+  font-size: 13px;
+  text-align: center;
+  padding: 24px 0;
+}
+
+.discussion-state-error {
+  color: var(--danger);
+}
+
+.discussion-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.discussion-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.discussion-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  user-select: none;
+  overflow: hidden;
+}
+
+.discussion-avatar-img {
+  object-fit: cover;
+}
+
+.discussion-item-body {
+  flex: 1;
+  min-width: 0;
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.discussion-item-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.discussion-author {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.discussion-timestamp {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.discussion-text {
+  font-size: 13px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.discussion-delete-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: 8px;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.discussion-delete-btn:hover {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.discussion-form {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  margin-top: 16px;
+}
+
+.discussion-input {
+  flex: 1;
+  min-height: 40px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  resize: vertical;
+  max-height: 120px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.discussion-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.discussion-input::placeholder {
+  color: var(--text-muted);
+}
+
+.discussion-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.discussion-send-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.discussion-send-btn:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.discussion-send-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

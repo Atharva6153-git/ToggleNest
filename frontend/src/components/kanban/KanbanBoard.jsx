@@ -11,6 +11,7 @@ import FiltersBar from '../FiltersBar'
 import ConfirmModal from '../ConfirmModal'
 import TaskDetailsModal from './TaskDetailsModal'
 import TaskFormModal from './TaskFormModal'
+import ProjectDiscussion from './ProjectDiscussion'
 import PageTransition from '../PageTransition'
 import { getProject } from '../../api/projectApi'
 import ThemeToggleButton from '../ThemeToggleButton'
@@ -371,6 +372,8 @@ function KanbanBoard() {
             </section>
           </DragDropContext>
         )}
+
+        <ProjectDiscussion projectId={projectId} />
       </div>
       </div>
     </PageTransition>

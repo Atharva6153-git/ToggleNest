@@ -110,6 +110,24 @@ const options = {
             timestamp: { type: 'string', format: 'date-time' },
           },
         },
+        Comment: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string', example: '64f1c2e9a1b2c3d4e5f6a7ca1' },
+            project: { type: 'string', example: '64f1c2e9a1b2c3d4e5f6a7ca' },
+            author: {
+              type: 'object',
+              properties: {
+                _id: { type: 'string', example: '64f1c2e9a1b2c3d4e5f6a7b8' },
+                name: { type: 'string', example: 'John Doe' },
+                profilePicture: { type: 'string', example: 'https://res.cloudinary.com/...' },
+              },
+            },
+            text: { type: 'string', example: 'Great progress on the board!' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
         LoginResponse: {
           type: 'object',
           properties: {
