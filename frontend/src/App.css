@@ -16,6 +16,7 @@
   position: sticky;
   top: 0;
   height: 100vh;
+  border-right: 1px solid var(--border);
 }
 
 .brand {
@@ -29,18 +30,26 @@
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 2px;
 }
 
 .sidebar-nav button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   background: transparent;
   border: none;
-  color: var(--text);
+  color: var(--text-muted);
   text-align: left;
   padding: 10px 12px;
   font-size: 14px;
   border-radius: 8px;
+  cursor: pointer;
   transition: background 0.15s, color 0.15s;
+}
+
+.sidebar-nav button svg {
+  flex-shrink: 0;
 }
 
 .sidebar-nav button:hover {
@@ -49,9 +58,86 @@
 }
 
 .sidebar-nav button.active {
-  background: var(--brand-soft);
-  color: var(--brand);
+  background: var(--accent-soft);
+  color: var(--accent);
   font-weight: 600;
+}
+
+.sidebar-bottom {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sidebar-profile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+
+.sidebar-profile:hover {
+  background: var(--accent-soft);
+}
+
+.sidebar-profile-img {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.sidebar-profile-initial {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.sidebar-profile-name {
+  font-size: 13px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-logout {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.sidebar-logout:hover {
+  background: var(--accent-soft);
+  color: var(--text);
 }
 
 .main-content {
@@ -1947,6 +2033,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 12px 16px;
+    border-right: none;
+    gap: 16px;
   }
 
   .brand {
@@ -1955,6 +2043,17 @@
 
   .sidebar-nav {
     flex-direction: row;
+    gap: 4px;
+  }
+
+  .sidebar-bottom {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+  }
+
+  .sidebar-logout {
+    display: none;
   }
 
   .main-content {
