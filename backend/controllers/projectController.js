@@ -132,14 +132,19 @@ exports.getProjects = async (req, res, next) => {
 exports.getProjectById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const project = await Project.findById(id).lean();
+    const project = await Project.findById(id)
+      .populate('members', 'name email profilePicture role')
+      .populate('createdBy', 'name email profilePicture role')
+      .lean();
     if (!project) {
       const error = new Error('Project not found');
       error.statusCode = 404;
       return next(error);
     }
-    const isCreator = project.createdBy.toString() === req.user.userId;
-    const isMember = (project.members || []).some((m) => m.toString() === req.user.userId);
+    const isCreator = String(project.createdBy?._id || project.createdBy) === req.user.userId;
+    const isMember = (project.members || []).some(
+      (m) => String(m._id || m) === req.user.userId
+    );
     if (!isCreator && !isMember) {
       const error = new Error('Not authorized to view this project');
       error.statusCode = 403;
