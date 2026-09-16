@@ -1,18 +1,51 @@
 # ToggleNest
 
-ToggleNest is a team task and workflow management platform built with the MERN stack. It provides a Kanban-style board, role-based access control (admin/member), Google and GitHub single sign-on, and real-time activity monitoring.
+## Project Overview
 
-## Features
+ToggleNest is a team task and workflow management platform built on the MERN stack (**M**ongoDB, **E**xpress, **R**eact, **N**ode.js). It centers all work around projects: admins create projects, assemble teams, and manage membership, while members focus on the boards they have been assigned to. Every project ships with a drag-and-drop Kanban board, a shared discussion feed, and a full activity trail, so the whole team can see what is happening and what comes next.
 
-- **Authentication:** Email/password signup and login, plus Google and GitHub OAuth via Firebase
-- **Role-based access control:** Admin and member permissions
-- **Project CRUD:** Create, read, update, and delete projects, with member assignment
-- **Kanban board:** Drag-and-drop task management across status columns
-- **Task management:** Assign tasks to members, set priority levels and due dates
-- **Activity logging:** Track task and project events
-- **Notifications:** In-app alerts for task assignment and status changes
-- **Dashboard:** Completion tracking and stats grouped by status and priority
-- **UI:** Fully responsive design with a dark theme
+Access is role-based and enforced live from the database — changing a user's role takes effect immediately, with no re-login required. Before entering the app, every new user completes a mandatory profile onboarding step (name + profile photo), and sign-ups can happen via email/password or Google/GitHub single sign-on. The dashboard tracks completion progress and breaks tasks down by status and priority with charts, while the backend keeps everything secure with JWT authentication, bcrypt-hashed passwords, rate limiting, input sanitization, and centralized error handling.
+
+## Key Features
+
+**Authentication**
+- Email/password signup and login
+- Google and GitHub OAuth single sign-on via Firebase
+- Mandatory profile onboarding (name + photo) before accessing the app
+
+**Role-Based Access Control**
+- **Admin** — full access: project creation, editing, deletion, and team management
+- **Member** — access limited to assigned projects and their task management
+- Roles sync live from the database, no re-login required
+
+**Project Management**
+- Full CRUD with member assignment
+- Project-scoped access — members only see the projects they're assigned to
+
+**Kanban Board**
+- Drag-and-drop task management across To-Do / In Progress / Done
+- Boards strictly isolated per project
+
+**Task Management**
+- Priority levels, due dates, assignment, and status tracking
+
+**Project Discussion**
+- Per-project comment threads with a real-time-feel polling experience
+
+**Activity Logging**
+- Full audit trail of task and project changes
+
+**Notifications**
+- In-app notifications for task assignments and status changes
+
+**Dashboard**
+- Completion tracking with a circular progress indicator
+- Status and priority breakdown charts (donut + bar)
+
+**Security**
+- JWT authentication and bcrypt password hashing
+- Rate limiting, mongo-sanitize (NoSQL injection), and hpp (HTTP parameter pollution) protection
+- Centralized error handling and input validation
 
 ## Tech Stack
 
@@ -20,16 +53,83 @@ ToggleNest is a team task and workflow management platform built with the MERN s
 |---|---|
 | Frontend | React + Vite, Tailwind CSS, Framer Motion |
 | Backend | Node.js + Express |
-| Database | MongoDB + Mongoose |
-| Auth | Firebase Authentication (Google/GitHub OAuth) + JWT |
-| Security & Validation | Helmet, express-rate-limit, express-validator |
-| Logging | Morgan |
+| Database | MongoDB + Mongoose (ODM) |
+| Authentication | Firebase Authentication (Google / GitHub OAuth) + JWT |
+| Image Uploads | Cloudinary |
+| API Documentation | Swagger (swagger-jsdoc + swagger-ui-express) |
+| Charts | Recharts |
+| Security | bcrypt, Helmet, express-rate-limit, express-validator, mongo-sanitize, hpp |
+
+## System Architecture
+
+```mermaid
+flowchart LR
+    Client[React Client<br/>Vite · Tailwind · Framer Motion] <-->|REST + JWT| API[Express API<br/>Routes · Controllers · Models]
+    API <-->|Mongoose ODM| DB[(MongoDB)]
+    Firebase[Firebase Auth<br/>Google / GitHub OAuth] <--> API
+    Cloudinary[Cloudinary<br/>Image Uploads] <--> API
+```
+
+## User Flow
+
+```mermaid
+flowchart TD
+    A[Sign Up<br/>Email/password or OAuth] --> B[Mandatory Profile Completion<br/>Name + Photo]
+    B --> C[Dashboard]
+    C --> D{Admin role?}
+    D -->|Yes| E[Create Project<br/>Build Team]
+    D -->|No| F[View Assigned Projects]
+    E --> G[Project Detail<br/>Kanban · Discussion · Team]
+    F --> G
+    G --> H[Manage Tasks<br/>Drag-and-Drop]
+```
+
+## Role-Based Access
+
+| Action | Admin | Member |
+|---|---|---|
+| Create project | ✅ | ❌ |
+| Edit project | ✅ | ❌ |
+| Delete project | ✅ | ❌ |
+| Manage team (members) | ✅ | ❌ |
+| View all projects | ✅ | ❌ |
+| View assigned projects | ✅ | ✅ |
+| Create / edit / delete tasks | ✅ | ✅ |
+| Assign tasks | ✅ | ✅ |
+| Drag-and-drop on Kanban | ✅ | ✅ |
+| Comment on discussion | ✅ | ✅ |
+| Delete own comment | ✅ | ✅ |
+| Delete any comment | ✅ | ❌ |
+| View dashboard | ✅ | ✅ |
+
+## Project Structure
+
+```
+togglenest/
+├── backend/
+│   ├── config/           # env, swagger, cloudinary, firebase setup
+│   ├── controllers/      # auth, project, task, comment, activity, notification logic
+│   ├── middleware/       # auth guard, validation, error handler
+│   ├── models/           # MongoDB schemas (User, Project, Task, Comment, ...)
+│   ├── routes/           # Express route definitions with Swagger annotations
+│   ├── tests/            # integration tests
+│   └── server.js         # backend entry point
+└── frontend/
+    ├── src/
+    │   ├── api/          # axios API client modules
+    │   ├── components/   # shared UI (Layout, modals, Kanban, charts, discussion)
+    │   ├── context/      # auth and theme React contexts
+    │   ├── pages/        # route-level screens (Dashboard, Projects, ProjectDetail, ...)
+    │   ├── App.jsx       # route definitions
+    │   ├── firebase.js   # Firebase client configuration
+    │   └── main.jsx      # frontend entry point
+    └── index.html
+```
 
 ## Planned / In Progress
 
 - **Microsoft OAuth** — planned, not yet implemented.
-
-> **Note:** Role-based access and project-level member assignment are in place; fine-grained per-project permissions are still being refined.
+- **Fine-grained per-project permissions** — project-level member assignment is in place; more granular permissions inside a project are still being refined.
 
 ## Backend API
 
