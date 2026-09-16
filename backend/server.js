@@ -77,6 +77,10 @@ app.use('/api/dashboard', dashboardRoutes);
 const notificationRoutes = require('./routes/notificationRoutes');
 app.use('/api/notifications', notificationRoutes);
 
+// Comment routes
+const commentRoutes = require('./routes/commentRoutes');
+app.use('/api/comments', commentRoutes);
+
 // Swagger documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   swaggerOptions: {
