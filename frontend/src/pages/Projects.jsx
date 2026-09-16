@@ -146,6 +146,12 @@ const Projects = () => {
 
                 <div className="project-card-footer">
                   <button
+                    className="secondary-btn"
+                    onClick={() => navigate(`/projects/${project._id}`)}
+                  >
+                    Details
+                  </button>
+                  <button
                     className="manage-btn"
                     onClick={() => navigate(`/projects/${project._id}/board`)}
                   >

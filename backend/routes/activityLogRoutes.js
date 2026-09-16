@@ -17,10 +17,15 @@ router.use(authMiddleware);
  * /activity-logs:
  *   get:
  *     summary: List all activity logs
- *     description: Returns all task activity logs sorted by timestamp descending. Requires authentication.
+ *     description: Returns task activity logs sorted by timestamp descending. Optionally filtered to a single project's tasks. Requires authentication.
  *     tags: [Activity Logs]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: project
+ *         schema: { type: string }
+ *         description: Project ID — only logs for this project's tasks are returned
  *     responses:
  *       200:
  *         description: List of activity logs
