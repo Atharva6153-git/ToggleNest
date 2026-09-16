@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd'
 import { motion } from 'framer-motion'
 import { toast } from 'react-hot-toast'
-import { Plus, ClipboardList } from 'lucide-react'
+import { Plus, ClipboardList, ArrowLeft } from 'lucide-react'
 import { createTask, deleteTask, getTasks, updateTask, updateTaskStatus } from '../../api/taskApi'
 import TaskCard from './TaskCard'
 import SkeletonCard from '../SkeletonCard'
@@ -32,6 +32,7 @@ const cardListVariants = {
 
 function KanbanBoard() {
   const { id: projectId } = useParams()
+  const navigate = useNavigate()
   const [projectName, setProjectName] = useState('')
   const [tasks, setTasks] = useState([])
   const [loading, setLoading] = useState(true)
@@ -264,9 +265,20 @@ function KanbanBoard() {
 
       <div className="kanban-shell">
         <header className="kanban-header">
-          <div className="kanban-header-title">
-            <h1 className="kanban-title">Kanban Board</h1>
-            {projectName && <span className="kanban-project-name">{projectName}</span>}
+          <div className="kanban-header-left">
+            <button
+              type="button"
+              className="kanban-back-btn"
+              onClick={() => navigate(`/projects/${projectId}`)}
+              aria-label="Back to project"
+              title={projectName ? `Back to ${projectName}` : 'Back to project'}
+            >
+              <ArrowLeft size={18} />
+            </button>
+            <div className="kanban-header-title">
+              <h1 className="kanban-title">Kanban Board</h1>
+              {projectName && <span className="kanban-project-name">{projectName}</span>}
+            </div>
           </div>
           <div className="kanban-header-actions">
             <ThemeToggleButton />

@@ -1260,6 +1260,32 @@
   gap: 10px;
 }
 
+.kanban-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.kanban-back-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.kanban-back-btn:hover {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
 .kanban-header-title {
   display: flex;
   align-items: baseline;
