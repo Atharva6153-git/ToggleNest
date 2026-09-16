@@ -11,7 +11,7 @@ exports.getActivityLogs = async (req, res, next) => {
       if (!mongoose.isValidObjectId(project)) {
         return res.json({ success: true, data: [] });
       }
-      const taskIds = await Task.find({ project: project }).select('_id');
+      const taskIds = await Task.find({ project: { $eq: project } }).select('_id');
       if (!taskIds.length) {
         return res.json({ success: true, data: [] });
       }
