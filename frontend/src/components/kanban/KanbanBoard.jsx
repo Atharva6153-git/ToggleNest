@@ -373,7 +373,7 @@ function KanbanBoard() {
           </DragDropContext>
         )}
 
-        <ProjectDiscussion projectId={projectId} />
+        {projectId && <ProjectDiscussion projectId={projectId} />}
       </div>
       </div>
     </PageTransition>
