@@ -4,6 +4,7 @@ import NotificationBell from './NotificationBell'
 import ThemeToggleButton from './ThemeToggleButton'
 import { useAuth } from '../context/AuthContext'
 import { LayoutDashboard, FolderKanban, Plus } from 'lucide-react'
+import logo from '../assets/logo.png'
 
 function Layout({ children }) {
   const navigate = useNavigate()
@@ -26,7 +27,9 @@ function Layout({ children }) {
   return (
     <div className="app-layout">
       <aside className="sidebar">
-        <div className="brand">ToggleNest</div>
+        <div className="brand">
+          <img src={logo} alt="ToggleNest" className="brand-logo" />
+        </div>
 
         <nav className="sidebar-nav">
           <button

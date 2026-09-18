@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { RadialBackground } from './RadialBackground'
 import ThemeToggleButton from './ThemeToggleButton'
+import logo from '../assets/logo.png'
 
 const cn = (...inputs) => inputs.filter(Boolean).join(' ')
 
@@ -110,7 +111,7 @@ const Navigation = ({ brand = 'ToggleNest', onSignIn }) => {
         <div className="nl-nav-row">
           <div className="nl-nav-brand">
             <a href="/" className="nl-brand-link">
-              {brand}
+              <img src={logo} alt={brand} className="nl-brand-logo" />
             </a>
           </div>
 
