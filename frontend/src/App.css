@@ -27,14 +27,6 @@
   letter-spacing: 0.02em;
 }
 
-.brand-logo {
-  display: block;
-  height: 40px;
-  width: auto;
-  object-fit: contain;
-  object-position: left center;
-}
-
 .sidebar-nav {
   display: flex;
   flex-direction: column;
@@ -810,14 +802,6 @@
 .auth-card h1 {
   font-size: 24px;
   text-align: center;
-}
-
-.auth-logo {
-  display: block;
-  height: 72px;
-  width: auto;
-  object-fit: contain;
-  margin: 0 auto 12px;
 }
 
 .auth-subtitle {
@@ -2677,21 +2661,12 @@
 }
 
 .nl-brand-link {
-  display: inline-flex;
-  align-items: center;
   font-size: 20px;
   font-weight: 700;
   letter-spacing: -0.025em;
   color: var(--text);
   text-decoration: none;
   transition: opacity 0.2s;
-}
-
-.nl-brand-logo {
-  display: block;
-  height: 40px;
-  width: auto;
-  object-fit: contain;
 }
 
 .nl-brand-link:hover {
