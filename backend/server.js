@@ -28,7 +28,7 @@ const sanitizeMongoKeys = (obj) => {
 
 const app = express();
 
-const CLIENT_URLS = (process.env.CLIENT_URLS || '')
+const FRONTEND_URLS = (process.env.FRONTEND_URL || '')
   .split(',')
   .map((url) => url.trim())
   .filter(Boolean);
@@ -36,7 +36,7 @@ const CLIENT_URLS = (process.env.CLIENT_URLS || '')
 const allowedOrigins = new Set([
   'http://localhost:5173',
   'http://127.0.0.1:5173',
-  ...CLIENT_URLS,
+  ...FRONTEND_URLS,
 ]);
 
 app.use(
