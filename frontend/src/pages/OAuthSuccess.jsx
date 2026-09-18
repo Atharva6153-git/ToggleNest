@@ -40,6 +40,8 @@ function OAuthSuccess() {
             name: u.name,
             email: u.email,
             role: u.role,
+            profilePicture: u.profilePicture,
+            profileComplete: Boolean(u.profileComplete),
           }),
         )
       } catch {

@@ -189,6 +189,7 @@ router.post("/login", async (req, res, next) => {
           name: user.name,
           email: user.email,
           role: user.role,
+          profileComplete: user.profileComplete,
         },
       },
     });
@@ -283,6 +284,7 @@ router.post("/firebase-login", async (req, res, next) => {
           name: user.name,
           email: user.email,
           role: user.role,
+          profileComplete: user.profileComplete,
         },
       },
     });

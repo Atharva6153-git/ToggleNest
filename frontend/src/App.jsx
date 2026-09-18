@@ -12,6 +12,7 @@ import './App.css'
 import KanbanBoardPage from './pages/KanbanBoardPage'
 import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
+import CompleteProfile from './pages/CompleteProfile'
 import ProjectDetail from './pages/ProjectDetail'
 import RequireAuth from './components/RequireAuth'
 import HomeRoute from './components/HomeRoute'
@@ -57,6 +58,14 @@ function App() {
         element={
           <RequireAuth>
             <Profile />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/complete-profile"
+        element={
+          <RequireAuth>
+            <CompleteProfile />
           </RequireAuth>
         }
       />

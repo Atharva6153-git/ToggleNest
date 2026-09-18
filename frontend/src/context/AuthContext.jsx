@@ -19,10 +19,12 @@ const readStoredUser = () => {
 export function AuthProvider({ children }) {
   const location = useLocation()
   const [user, setUser] = useState(readStoredUser)
+  const [loading, setLoading] = useState(() => Boolean(localStorage.getItem(TOKEN_KEY)))
 
   const refreshUser = useCallback(async () => {
     if (!localStorage.getItem(TOKEN_KEY)) {
       setUser(null)
+      setLoading(false)
       return null
     }
 
@@ -34,11 +36,14 @@ export function AuthProvider({ children }) {
         email: me.email,
         role: me.role,
         profilePicture: me.profilePicture,
+        profileComplete: Boolean(me.profileComplete),
       }
       setUser(freshUser)
+      setLoading(false)
       localStorage.setItem(USER_KEY, JSON.stringify(freshUser))
       return freshUser
     } catch {
+      setLoading(false)
       return null
     }
   }, [])
@@ -74,7 +79,7 @@ export function AuthProvider({ children }) {
   const isAdmin = user?.role === 'admin'
 
   return (
-    <AuthContext.Provider value={{ user, isAdmin, refreshUser }}>
+    <AuthContext.Provider value={{ user, isAdmin, refreshUser, loading }}>
       {children}
     </AuthContext.Provider>
   )
