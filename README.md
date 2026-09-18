@@ -557,6 +557,10 @@ Before going live, remember to:
 ## Contributors
 
 - Atharva Jadhav
+- Sarangi Jawale
+- Vedant Sawant
+- Shraddha Das
+- Shreya Karande
 
 ## License
 
