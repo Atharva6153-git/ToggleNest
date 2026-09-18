@@ -532,7 +532,7 @@ The frontend should run at `http://localhost:5173`.
 Before going live, remember to:
 
 - **Frontend:** set `VITE_API_URL` to your production API URL (including the `/api` suffix) before building, e.g. `VITE_API_URL=https://api.example.com/api`. Vite inlines env vars at build time, so the production bundle must be built with the correct value. See `frontend/.env.example`.
-- **Backend:** set `PORT`, `MONGO_URI`, `JWT_SECRET`, `NODE_ENV=production`, and the production frontend URL(s) in `CLIENT_URLS` (comma-separated, used for CORS). Provide the Firebase service account via `FIREBASE_SERVICE_ACCOUNT_JSON` (JSON string — preferred for hosted platforms where you can't upload a file) or `FIREBASE_SERVICE_ACCOUNT_PATH` (file path). See `backend/.env.example`.
+- **Backend:** set `PORT`, `MONGO_URI`, `JWT_SECRET`, `NODE_ENV=production`, and the production frontend URL(s) in `FRONTEND_URL` (comma-separated, used for CORS). Provide the Firebase service account via `FIREBASE_SERVICE_ACCOUNT_JSON` (JSON string — preferred for hosted platforms where you can't upload a file) or `FIREBASE_SERVICE_ACCOUNT_PATH` (file path). See `backend/.env.example`.
 - **Firebase Console:** add the production frontend URL under Authentication > Settings > **Authorized domains**, and add it as an **authorized redirect URI** for the Google and GitHub sign-in providers.
 - **GitHub OAuth app:** add the production frontend URL as an **authorized callback / redirect URI** in the GitHub OAuth app settings (Settings > Developer settings > OAuth Apps), in addition to any localhost entries.
 - **JWT secret:** use a long, random, unique value in production — never reuse a local development secret.
