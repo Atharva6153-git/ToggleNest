@@ -1,12 +1,23 @@
 # ToggleNest
 
+![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
+![MongoDB](https://img.shields.io/badge/MongoDB-4EA94B?style=flat&logo=mongodb&logoColor=white)
+![Express.js](https://img.shields.io/badge/Express.js-404D59?style=flat&logo=express&logoColor=white)
+![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)
+![Node.js](https://img.shields.io/badge/Node.js-43853D?style=flat&logo=node.js&logoColor=white)
+
 ## Project Overview
 
 ToggleNest is a team task and workflow management platform built on the MERN stack (**M**ongoDB, **E**xpress, **R**eact, **N**ode.js). It centers all work around projects: admins create projects, assemble teams, and manage membership, while members focus on the boards they have been assigned to. Every project ships with a drag-and-drop Kanban board, a shared discussion feed, and a full activity trail, so the whole team can see what is happening and what comes next.
 
 Access is role-based and enforced live from the database — changing a user's role takes effect immediately, with no re-login required. Before entering the app, every new user completes a mandatory profile onboarding step (name + profile photo), and sign-ups can happen via email/password or Google/GitHub single sign-on. The dashboard tracks completion progress and breaks tasks down by status and priority with charts, while the backend keeps everything secure with JWT authentication, bcrypt-hashed passwords, rate limiting, input sanitization, and centralized error handling.
 
-## Key Features
+## Live Demo
+
+- Frontend: https://toggle-nest-gules.vercel.app/
+- Backend API Docs: https://togglenest-h7jk.onrender.com/api-docs/
+
+## ✅ Key Features
 
 **Authentication**
 - Email/password signup and login
@@ -84,7 +95,7 @@ flowchart TD
     G --> H[Manage Tasks<br/>Drag-and-Drop]
 ```
 
-## Role-Based Access
+## 🔒 Role-Based Access
 
 | Action | Admin | Member |
 |---|---|---|
@@ -102,7 +113,7 @@ flowchart TD
 | Delete any comment | ✅ | ❌ |
 | View dashboard | ✅ | ✅ |
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 togglenest/
@@ -464,7 +475,7 @@ Typical HTTP statuses:
 - `429` for rate limiting
 - `500` for server errors
 
-## Local Setup Instructions
+## 🚀 Local Setup Instructions
 
 ### 1. Install dependencies
 
@@ -527,7 +538,7 @@ npm run dev
 
 The frontend should run at `http://localhost:5173`.
 
-## Deployment Checklist
+## 🚀 Deployment Checklist
 
 Before going live, remember to:
 
@@ -542,3 +553,11 @@ Before going live, remember to:
 - All protected routes require a valid JWT token in the `Authorization` header.
 - Most route validations enforce task field rules such as required title and valid status/priority values.
 - The API uses pagination for task lists and basic rate limiting for abuse protection.
+
+## Contributors
+
+- Atharva Jadhav
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
