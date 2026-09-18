@@ -5,7 +5,6 @@ import { Check } from 'lucide-react'
 import PageTransition from '../components/PageTransition'
 import SocialAuthButtons from '../components/SocialAuthButtons'
 import { register, login } from '../api/authApi'
-import logo from '../assets/logo.png'
 
 const stepVariants = {
   enter: (dir) => ({ x: dir > 0 ? 48 : -48, opacity: 0 }),
@@ -119,7 +118,6 @@ function Register() {
           initial={{ opacity: 0, y: 20 }}
           animate={cardControls}
         >
-          <img src={logo} alt="ToggleNest" className="auth-logo" />
           <h1>Create an account</h1>
           <p className="auth-subtitle">Start organizing your work today.</p>
 

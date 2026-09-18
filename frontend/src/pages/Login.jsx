@@ -5,7 +5,6 @@ import { Eye, EyeOff, Lock, Mail } from 'lucide-react'
 import PageTransition from '../components/PageTransition'
 import SocialAuthButtons from '../components/SocialAuthButtons'
 import { login } from '../api/authApi'
-import logo from '../assets/logo.png'
 
 function Login() {
   const navigate = useNavigate()
@@ -51,7 +50,6 @@ function Login() {
           initial={{ opacity: 0, y: 20 }}
           animate={cardControls}
         >
-          <img src={logo} alt="ToggleNest" className="auth-logo" />
           <h1>Sign in to ToggleNest</h1>
           <p className="auth-subtitle">Organize your work, one board at a time.</p>
 
