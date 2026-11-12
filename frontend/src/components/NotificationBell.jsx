@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Inbox } from 'lucide-react'
 import { getNotifications, markAsRead, markAllAsRead } from '../api/notificationApi'
-import { TOKEN_KEY } from '../api/axiosInstance'
+import { useAuth } from '../context/AuthContext'
 import EmptyState from './EmptyState'
 
 function formatTime(timestamp) {
@@ -40,12 +40,12 @@ function BellIcon() {
 }
 
 function NotificationBell() {
+  const { user } = useAuth()
   const [notifications, setNotifications] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY))
   const containerRef = useRef(null)
 
   const extractNotifications = useCallback((res) => {
@@ -54,24 +54,22 @@ function NotificationBell() {
   }, [])
 
   const fetchNotifications = useCallback(async () => {
-    if (!localStorage.getItem(TOKEN_KEY)) return
+    if (!user) return
     try {
       const res = await getNotifications({ limit: 30 })
-      console.log('NotificationBell raw response:', res)
       const items = extractNotifications(res)
       setNotifications(items)
       setUnreadCount(res?.unreadCount || 0)
       setError('')
-    } catch (err) {
-      console.error('NotificationBell fetch error:', err)
+    } catch {
       setError('Failed to load notifications')
     } finally {
       setLoading(false)
     }
-  }, [extractNotifications])
+  }, [extractNotifications, user])
 
   const refresh = useCallback(async () => {
-    if (!localStorage.getItem(TOKEN_KEY)) return
+    if (!user) return
     try {
       const res = await getNotifications({ limit: 30 })
       const items = extractNotifications(res)
@@ -81,10 +79,10 @@ function NotificationBell() {
     } catch {
       // ignore polling errors
     }
-  }, [extractNotifications])
+  }, [extractNotifications, user])
 
   const refreshUnreadCount = useCallback(async () => {
-    if (!localStorage.getItem(TOKEN_KEY)) return
+    if (!user) return
     try {
       const res = await getNotifications({ limit: open ? 30 : 1 })
       setUnreadCount(res?.unreadCount || 0)
@@ -94,13 +92,11 @@ function NotificationBell() {
     } catch {
       // ignore poll errors for the badge count
     }
-  }, [open, extractNotifications])
+  }, [open, extractNotifications, user])
 
   useEffect(() => {
-    setToken(localStorage.getItem(TOKEN_KEY))
-  }, [])
+    if (!user) return undefined
 
-  useEffect(() => {
     fetchNotifications()
     const listInterval = setInterval(refresh, 30000)
     const countInterval = setInterval(refreshUnreadCount, 5000)
@@ -108,7 +104,7 @@ function NotificationBell() {
       clearInterval(listInterval)
       clearInterval(countInterval)
     }
-  }, [fetchNotifications, refresh, refreshUnreadCount, token])
+  }, [fetchNotifications, refresh, refreshUnreadCount, user])
 
   useEffect(() => {
     const handleClickOutside = (e) => {

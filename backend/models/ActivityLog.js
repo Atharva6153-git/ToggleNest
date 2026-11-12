@@ -11,6 +11,7 @@ const activityLogSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+      maxlength: [255, 'Activity action cannot exceed 255 characters'],
     },
     performedBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -24,5 +25,7 @@ const activityLogSchema = new mongoose.Schema(
   },
   { timestamps: false }
 );
+
+activityLogSchema.index({ task: 1, timestamp: -1 });
 
 module.exports = mongoose.model('ActivityLog', activityLogSchema);

@@ -8,6 +8,7 @@ const projectSchema = new Schema(
       type: String,
       required: [true, 'Project name is required'],
       trim: true,
+      minlength: [1, 'Project name cannot be empty'],
       maxlength: [100, 'Project name cannot exceed 100 characters'],
     },
     description: {
@@ -25,5 +26,7 @@ const projectSchema = new Schema(
 
 // Compound index covering the paginated list query: filter by createdBy, sort by createdAt
 projectSchema.index({ createdBy: 1, createdAt: -1 });
+// Membership lookups for object-level authorisation.
+projectSchema.index({ members: 1 });
 
 module.exports = mongoose.model('Project', projectSchema);

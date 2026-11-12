@@ -63,8 +63,8 @@ function Register() {
       setError('Please enter a valid email address.')
       return
     }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.')
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.')
       return
     }
 
@@ -94,15 +94,6 @@ function Register() {
       await login({ email, password })
       navigate('/dashboard')
     } catch (err) {
-      console.log('[signup] Create Account request failed', {
-        url: err?.config?.url,
-        method: err?.config?.method?.toUpperCase(),
-        sentBody: err?.config?.data,
-        status: err?.response?.status,
-        responseBody: err?.response?.data,
-        networkError: !err?.response,
-        axiosMessage: err?.message,
-      })
       setError(getErrorMessage(err))
       shakeCard()
     } finally {
@@ -182,8 +173,10 @@ function Register() {
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Min 6 characters"
-                      minLength={6}
+                      placeholder="Min 8 characters"
+                      minLength={8}
+                      maxLength={128}
+                      autoComplete="new-password"
                       required
                     />
                     <label htmlFor="register-password">Password</label>

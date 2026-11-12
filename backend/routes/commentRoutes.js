@@ -1,4 +1,5 @@
 const express = require('express');
+const { body, query, validationResult } = require('express-validator');
 const authMiddleware = require('../middleware/authMiddleware');
 const {
   getComments,
@@ -7,6 +8,21 @@ const {
 } = require('../controllers/commentController');
 
 const router = express.Router();
+
+const handleValidationErrors = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors: errors.array().map((error) => ({
+        field: error.path,
+        message: error.msg,
+      })),
+    });
+  }
+  return next();
+};
 
 /**
  * @swagger
@@ -55,7 +71,12 @@ router.use(authMiddleware);
  *       401:
  *         description: Not authenticated
  */
-router.get('/', getComments);
+router.get(
+  '/',
+  [query('project').optional().isMongoId().withMessage('project must be a valid id')],
+  handleValidationErrors,
+  getComments
+);
 
 /**
  * @swagger
@@ -102,7 +123,24 @@ router.get('/', getComments);
  *       404:
  *         description: Project not found
  */
-router.post('/', createComment);
+router.post(
+  '/',
+  [
+    // Missing project ids fall through to the controller so the API keeps its
+    // existing "Valid project id is required" response; malformed ids are
+    // rejected here before any database access.
+    body('project').optional().isMongoId().withMessage('project must be a valid id'),
+    body('text')
+      .isString()
+      .withMessage('text is required')
+      .bail()
+      .trim()
+      .isLength({ min: 1, max: 1000 })
+      .withMessage('text must be between 1 and 1000 characters'),
+  ],
+  handleValidationErrors,
+  createComment
+);
 
 /**
  * @swagger

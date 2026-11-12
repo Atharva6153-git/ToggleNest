@@ -1,5 +1,10 @@
-import axios from 'axios'
-import axiosInstance, { TOKEN_KEY, API_BASE_URL } from './axiosInstance'
+import axiosInstance, { USER_KEY } from './axiosInstance'
+
+const persistUser = (user) => {
+  if (user) {
+    localStorage.setItem(USER_KEY, JSON.stringify(user))
+  }
+}
 
 export const register = async (userData) => {
   const response = await axiosInstance.post('/auth/register', userData)
@@ -8,17 +13,15 @@ export const register = async (userData) => {
 
 export const login = async (credentials) => {
   const response = await axiosInstance.post('/auth/login', credentials)
-  const { token, user } = response.data.data
-  localStorage.setItem(TOKEN_KEY, token)
-  localStorage.setItem('user', JSON.stringify(user))
+  const { user } = response.data.data
+  persistUser(user)
   return response.data.data
 }
 
 export const firebaseLogin = async (idToken) => {
   const response = await axiosInstance.post('/auth/firebase-login', { idToken })
-  const { token, user } = response.data.data
-  localStorage.setItem(TOKEN_KEY, token)
-  localStorage.setItem('user', JSON.stringify(user))
+  const { user } = response.data.data
+  persistUser(user)
   return response.data.data
 }
 
@@ -43,10 +46,8 @@ export const changePassword = async (payload) => {
 }
 
 export const uploadProfilePicture = async (formData) => {
-  const token = localStorage.getItem(TOKEN_KEY)
-
-  const response = await axios.post(`${API_BASE_URL}/auth/profile/picture`, formData, {
-    headers: { Authorization: `Bearer ${token}` },
+  const response = await axiosInstance.post('/auth/profile/picture', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
   })
   return response.data.data
 }
@@ -56,7 +57,12 @@ export const getUsers = async () => {
   return response.data.data
 }
 
-export const logout = () => {
-  localStorage.removeItem(TOKEN_KEY)
-  localStorage.removeItem('user')
+export const logout = async () => {
+  try {
+    await axiosInstance.post('/auth/logout')
+  } catch {
+    // Even if the server call fails, clear local state.
+  } finally {
+    localStorage.removeItem(USER_KEY)
+  }
 }

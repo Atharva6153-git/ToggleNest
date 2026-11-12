@@ -1,9 +1,16 @@
 const Project = require('../models/Project');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
+const {
+  isValidId,
+  resolveActor,
+  isProjectMember,
+} = require('../utils/accessControl');
 
 const CREATE_FIELDS = ['name', 'description', 'deadline', 'members'];
 const UPDATE_FIELDS = ['name', 'description', 'deadline', 'members'];
+
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const pick = (source, allowedFields) => {
   const result = {};
@@ -76,14 +83,13 @@ exports.createProject = async (req, res, next) => {
             }))
           );
         } catch (notifErr) {
-          console.error('createProject: error creating notifications', notifErr);
+          console.error('createProject: error creating notifications', notifErr.message);
         }
       }
     }
 
     return res.status(201).json({ success: true, data: saved });
   } catch (err) {
-    console.error('createProject error', err);
     return next(err);
   }
 };
@@ -91,17 +97,23 @@ exports.createProject = async (req, res, next) => {
 exports.getProjects = async (req, res, next) => {
   try {
     const { page = 1, limit = 20, search } = req.query;
+    const actor = await resolveActor(req);
     const filter = {};
 
-    if (req.user.role !== 'admin') {
-      filter.$or = [
-        { createdBy: req.user.userId },
-        { members: req.user.userId },
-      ];
+    if (!actor.isAdmin) {
+      if (!isValidId(actor.id)) {
+        return res.json({
+          success: true,
+          data: [],
+          pagination: { page: 1, limit: 0, total: 0, pages: 0 },
+        });
+      }
+      filter.$or = [{ createdBy: actor.id }, { members: actor.id }];
     }
 
-    if (search) {
-      filter.name = { $regex: search, $options: 'i' };
+    const searchValue = typeof search === 'string' ? search.trim() : '';
+    if (searchValue) {
+      filter.name = { $regex: escapeRegex(searchValue), $options: 'i' };
     }
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
@@ -124,7 +136,6 @@ exports.getProjects = async (req, res, next) => {
       },
     });
   } catch (err) {
-    console.error('getProjects error', err);
     return next(err);
   }
 };
@@ -132,27 +143,34 @@ exports.getProjects = async (req, res, next) => {
 exports.getProjectById = async (req, res, next) => {
   try {
     const { id } = req.params;
+    if (!isValidId(id)) {
+      const error = new Error('Invalid project id');
+      error.statusCode = 400;
+      return next(error);
+    }
+
     const project = await Project.findById(id)
       .populate('members', 'name email profilePicture role')
       .populate('createdBy', 'name email profilePicture role')
       .lean();
+
     if (!project) {
       const error = new Error('Project not found');
       error.statusCode = 404;
       return next(error);
     }
-    const isCreator = String(project.createdBy?._id || project.createdBy) === req.user.userId;
-    const isMember = (project.members || []).some(
-      (m) => String(m._id || m) === req.user.userId
-    );
-    if (!isCreator && !isMember) {
+
+    const actor = await resolveActor(req);
+    const isCreator = String(project.createdBy?._id || project.createdBy) === actor.id;
+
+    if (!actor.isAdmin && !isCreator && !isProjectMember(project, actor.id)) {
       const error = new Error('Not authorized to view this project');
       error.statusCode = 403;
       return next(error);
     }
+
     return res.json({ success: true, data: project });
   } catch (err) {
-    console.error('getProjectById error', err);
     return next(err);
   }
 };
@@ -160,13 +178,25 @@ exports.getProjectById = async (req, res, next) => {
 exports.updateProject = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const project = await Project.findById(id);
-    if (!project) return res.status(404).json({ message: 'Project not found' });
+    if (!isValidId(id)) {
+      const error = new Error('Invalid project id');
+      error.statusCode = 400;
+      return next(error);
+    }
 
-    const isCreator = project.createdBy.toString() === req.user.userId;
-    const isAdmin = req.user.role === 'admin';
-    if (!isCreator && !isAdmin) {
-      return res.status(403).json({ message: 'Not authorized to update this project' });
+    const project = await Project.findById(id);
+    if (!project) {
+      const error = new Error('Project not found');
+      error.statusCode = 404;
+      return next(error);
+    }
+
+    const actor = await resolveActor(req);
+    const isCreator = String(project.createdBy) === actor.id;
+    if (!isCreator && !actor.isAdmin) {
+      const error = new Error('Not authorized to update this project');
+      error.statusCode = 403;
+      return next(error);
     }
 
     const data = pick(req.body, UPDATE_FIELDS);
@@ -177,12 +207,8 @@ exports.updateProject = async (req, res, next) => {
     };
 
     if (data.members) {
-      const currentMembers = new Set(
-        (project.members || []).map((m) => m.toString())
-      );
-      const newMembers = data.members.filter(
-        (m) => !currentMembers.has(String(m))
-      );
+      const currentMembers = new Set((project.members || []).map((member) => member.toString()));
+      const newMembers = data.members.filter((member) => !currentMembers.has(String(member)));
 
       if (newMembers.length > 0) {
         await Notification.create(
@@ -199,6 +225,7 @@ exports.updateProject = async (req, res, next) => {
       returnDocument: 'after',
       runValidators: true,
     });
+
     if (!updated) {
       const error = new Error('Project not found');
       error.statusCode = 404;
@@ -207,7 +234,7 @@ exports.updateProject = async (req, res, next) => {
 
     const details = buildProjectChangeDetails(previous, updated);
     if (details.length) {
-      const audience = await getProjectAudience(updated, req.user.userId);
+      const audience = await getProjectAudience(updated, actor.id);
       await Notification.insertMany(
         audience.map((recipient) => ({
           recipient,
@@ -219,7 +246,6 @@ exports.updateProject = async (req, res, next) => {
 
     return res.json({ success: true, data: updated });
   } catch (err) {
-    console.error('updateProject error', err);
     return next(err);
   }
 };
@@ -227,21 +253,28 @@ exports.updateProject = async (req, res, next) => {
 exports.deleteProject = async (req, res, next) => {
   try {
     const { id } = req.params;
+    if (!isValidId(id)) {
+      const error = new Error('Invalid project id');
+      error.statusCode = 400;
+      return next(error);
+    }
+
     const project = await Project.findById(id);
     if (!project) {
       const error = new Error('Project not found');
       error.statusCode = 404;
       return next(error);
     }
-    const isCreator = project.createdBy.toString() === req.user.userId;
-    const isAdmin = req.user.role === 'admin';
-    if (!isCreator && !isAdmin) {
+
+    const actor = await resolveActor(req);
+    const isCreator = String(project.createdBy) === actor.id;
+    if (!isCreator && !actor.isAdmin) {
       const error = new Error('Not authorized to delete this project');
       error.statusCode = 403;
       return next(error);
     }
 
-    const audience = await getProjectAudience(project, req.user.userId);
+    const audience = await getProjectAudience(project, actor.id);
     await Notification.insertMany(
       audience.map((recipient) => ({
         recipient,
@@ -253,7 +286,6 @@ exports.deleteProject = async (req, res, next) => {
     await Project.findByIdAndDelete(id);
     return res.json({ success: true, data: { message: 'Project deleted' } });
   } catch (err) {
-    console.error('deleteProject error', err);
     return next(err);
   }
 };
