@@ -29,8 +29,8 @@ const stripActiveMarkupOnce = (value) =>
     .replace(/\son[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
     // Neutralise javascript:/vbscript:/data HTML URLs.
     .replace(/\b(href|src|action)\s*=\s*(?:"|')?\s*(?:javascript|vbscript|data)\s*:[^"'\s>]*/gi, '$1="#"')
-    // Strip any remaining tags (plain-text fields never need them).
-    .replace(/<[^>]*>/g, '');
+    // Plain-text fields never need HTML delimiters; remove them directly.
+    .replace(/[<>]/g, '');
 
 const stripActiveMarkup = (value) => {
   let previous;
