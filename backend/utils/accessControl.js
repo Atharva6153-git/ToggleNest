@@ -43,11 +43,14 @@ const authorizeProject = async (projectId, req) => {
     return { actor, project: null, allowed: actor.isAdmin };
   }
 
-  if (!isValidId(projectId)) {
+  const normalizedProjectId = toId(projectId);
+  if (!isValidId(normalizedProjectId)) {
     return { actor, project: null, allowed: false };
   }
 
-  const project = await Project.findById(projectId).select('members createdBy');
+  const project = await Project.findOne({ _id: { $eq: normalizedProjectId } }).select(
+    'members createdBy'
+  );
 
   if (!project) {
     // Admins may operate on records that no longer exist (keeps delete flows
