@@ -19,7 +19,7 @@ const MAX_STRING_LENGTH = 20000;
 const stripControlCharacters = (value) =>
   value.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '');
 
-const stripActiveMarkup = (value) =>
+const stripActiveMarkupOnce = (value) =>
   value
     // Remove full script/style/iframe blocks including their contents.
     .replace(/<\s*(script|style|iframe|object|embed|svg|math)\b[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, '')
@@ -31,6 +31,21 @@ const stripActiveMarkup = (value) =>
     .replace(/\b(href|src|action)\s*=\s*(?:"|')?\s*(?:javascript|vbscript|data)\s*:[^"'\s>]*/gi, '$1="#"')
     // Strip any remaining tags (plain-text fields never need them).
     .replace(/<[^>]*>/g, '');
+
+const stripActiveMarkup = (value) => {
+  let previous;
+  let current = value;
+  let iterations = 0;
+  const MAX_ITERATIONS = 10;
+
+  do {
+    previous = current;
+    current = stripActiveMarkupOnce(previous);
+    iterations += 1;
+  } while (current !== previous && iterations < MAX_ITERATIONS);
+
+  return current;
+};
 
 const sanitizeString = (value) => {
   if (value.length > MAX_STRING_LENGTH) {
