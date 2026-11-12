@@ -612,6 +612,128 @@
   font-size: 12px;
 }
 
+/* Admin users */
+
+.admin-users-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+
+.admin-users-table-wrap {
+  overflow-x: auto;
+}
+
+.admin-users-table {
+  width: 100%;
+  min-width: 680px;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.admin-users-table th {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.admin-users-table td {
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  font-size: 14px;
+}
+
+.admin-users-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-user-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 230px;
+}
+
+.admin-user-identity > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.admin-user-identity strong {
+  font-size: 14px;
+}
+
+.admin-user-identity div span,
+.admin-user-self-note {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.admin-user-avatar {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.admin-user-initials {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.admin-user-joined {
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.admin-user-role-select {
+  min-width: 112px;
+  padding: 8px 30px 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.admin-user-role-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.admin-user-role-select:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.admin-user-self-note {
+  display: block;
+  margin-top: 4px;
+}
+
+.admin-users-skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
 /* Forms */
 
 .form-wrapper {
