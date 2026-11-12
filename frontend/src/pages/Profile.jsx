@@ -170,8 +170,8 @@ function Profile() {
       toast.error('Please enter your current password.')
       return
     }
-    if (newPassword.length < 6) {
-      toast.error('New password must be at least 6 characters.')
+    if (newPassword.length < 8) {
+      toast.error('New password must be at least 8 characters.')
       return
     }
     if (newPassword !== confirmPassword) {
@@ -479,8 +479,10 @@ function Profile() {
                             type={showNew ? 'text' : 'password'}
                             value={newPassword}
                             onChange={(e) => setNewPassword(e.target.value)}
-                            placeholder="At least 6 characters"
+                            placeholder="At least 8 characters"
                             autoComplete="new-password"
+                            minLength={8}
+                            maxLength={128}
                           />
                           <button
                             type="button"

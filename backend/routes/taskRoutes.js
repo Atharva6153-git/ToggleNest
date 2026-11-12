@@ -10,7 +10,15 @@ const validateTaskPayload = [
     .optional({ values: 'falsy' })
     .trim()
     .notEmpty()
-    .withMessage('title is required and cannot be empty'),
+    .withMessage('title is required and cannot be empty')
+    .isLength({ max: 200 })
+    .withMessage('title cannot exceed 200 characters'),
+  body('description')
+    .optional({ values: 'null' })
+    .isString()
+    .withMessage('description must be a string')
+    .isLength({ max: 5000 })
+    .withMessage('description cannot exceed 5000 characters'),
   body('status')
     .optional({ values: 'falsy' })
     .isIn(['To-Do', 'In Progress', 'Done'])
@@ -23,6 +31,14 @@ const validateTaskPayload = [
     .optional({ values: 'falsy' })
     .isISO8601({ strict: true, strictSeparator: true })
     .withMessage('dueDate must be a valid date'),
+  body('assignedTo')
+    .optional({ values: 'falsy' })
+    .isMongoId()
+    .withMessage('assignedTo must be a valid user id'),
+  body('project')
+    .optional({ values: 'falsy' })
+    .isMongoId()
+    .withMessage('project must be a valid project id'),
 ];
 
 const handleValidationErrors = (req, res, next) => {

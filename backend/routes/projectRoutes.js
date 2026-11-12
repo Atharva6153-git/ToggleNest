@@ -1,8 +1,75 @@
 const express = require('express');
+const { body, validationResult } = require('express-validator');
 const router = express.Router();
 const auth = require('../middleware/authMiddleware');
 const roleMiddleware = require('../middleware/roleMiddleware');
 const projectController = require('../controllers/projectController');
+
+const handleValidationErrors = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors: errors.array().map((error) => ({
+        field: error.path,
+        message: error.msg,
+      })),
+    });
+  }
+  return next();
+};
+
+const validateProjectPayload = [
+  body('name')
+    .isString()
+    .withMessage('name is required')
+    .bail()
+    .trim()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('name must be between 1 and 100 characters'),
+  body('description')
+    .optional({ values: 'null' })
+    .isString()
+    .withMessage('description must be a string')
+    .isLength({ max: 2000 })
+    .withMessage('description cannot exceed 2000 characters'),
+  body('deadline')
+    .optional({ values: 'falsy' })
+    .isISO8601({ strict: true, strictSeparator: true })
+    .withMessage('deadline must be a valid date'),
+  body('members')
+    .optional()
+    .isArray({ max: 100 })
+    .withMessage('members must be an array of at most 100 user ids'),
+  body('members.*').optional().isMongoId().withMessage('members must contain valid user ids'),
+];
+
+const validateProjectUpdate = [
+  body('name')
+    .optional()
+    .isString()
+    .withMessage('name must be a string')
+    .bail()
+    .trim()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('name must be between 1 and 100 characters'),
+  body('description')
+    .optional({ values: 'null' })
+    .isString()
+    .withMessage('description must be a string')
+    .isLength({ max: 2000 })
+    .withMessage('description cannot exceed 2000 characters'),
+  body('deadline')
+    .optional({ values: 'falsy' })
+    .isISO8601({ strict: true, strictSeparator: true })
+    .withMessage('deadline must be a valid date'),
+  body('members')
+    .optional()
+    .isArray({ max: 100 })
+    .withMessage('members must be an array of at most 100 user ids'),
+  body('members.*').optional().isMongoId().withMessage('members must contain valid user ids'),
+];
 
 /**
  * @swagger
@@ -60,7 +127,7 @@ const projectController = require('../controllers/projectController');
  *       401:
  *         description: Not authenticated
  */
-router.post('/', auth, roleMiddleware('admin'), projectController.createProject);
+router.post('/', auth, roleMiddleware('admin'), validateProjectPayload, handleValidationErrors, projectController.createProject);
 
 /**
  * @swagger
@@ -204,7 +271,7 @@ router.get('/:id', auth, projectController.getProjectById);
  *       404:
  *         description: Project not found
  */
-router.put('/:id', auth, roleMiddleware('admin'), projectController.updateProject);
+router.put('/:id', auth, roleMiddleware('admin'), validateProjectUpdate, handleValidationErrors, projectController.updateProject);
 
 /**
  * @swagger
@@ -259,7 +326,7 @@ router.put('/:id', auth, roleMiddleware('admin'), projectController.updateProjec
  *       404:
  *         description: Project not found
  */
-router.patch('/:id', auth, roleMiddleware('admin'), projectController.updateProject);
+router.patch('/:id', auth, roleMiddleware('admin'), validateProjectUpdate, handleValidationErrors, projectController.updateProject);
 
 /**
  * @swagger

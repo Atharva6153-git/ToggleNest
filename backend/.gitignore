@@ -1,3 +1,23 @@
 node_modules/
+
+# Environment files
 .env
+.env.*
+!.env.example
+
+# Firebase service account credentials
+serviceAccountKey*.json
+*service-account*.json
+*firebase-adminsdk*.json
 config/firebase-service-account.json
+
+# Private keys
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Logs / coverage
+logs/
+*.log
+coverage/

@@ -1,28 +1,95 @@
-const express = require("express");
-const crypto = require("crypto");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const { getAuth, getApps } = require("../config/firebaseAdmin");
-const User = require("../models/User");
-const protect = require("../middleware/authMiddleware");
-const upload = require("../config/cloudinary");
+const express = require('express');
+const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { body, validationResult } = require('express-validator');
+const { getAuth, getApps } = require('../config/firebaseAdmin');
+const { config } = require('../config/env');
+const User = require('../models/User');
+const protect = require('../middleware/authMiddleware');
+const upload = require('../config/cloudinary');
+const { authLimiter, uploadLimiter, dailyUploadBudget } = require('../middleware/rateLimiters');
+const {
+  setSessionCookie,
+  clearSessionCookie,
+  setCsrfCookie,
+  getCsrfCookie,
+} = require('../utils/cookies');
 
 const router = express.Router();
-console.log("AUTH ROUTES FILE LOADED");
 
-const getNormalizedEmail = (value) => (
-  typeof value === "string" ? value.trim().toLowerCase() : ""
-);
+const getNormalizedEmail = (value) =>
+  typeof value === 'string' ? value.trim().toLowerCase() : '';
 
-router.get("/test", (req, res) => {
-  res.send("Auth route is working!");
+const publicUser = (user) => ({
+  id: user._id,
+  name: user.name,
+  email: user.email,
+  role: user.role,
+  profilePicture: user.profilePicture,
+  profileComplete: user.profileComplete,
+  jobTitle: user.jobTitle,
+  bio: user.bio,
+  createdAt: user.createdAt,
 });
+
+const signSessionToken = (user) =>
+  jwt.sign(
+    { userId: user._id, role: user.role },
+    config.jwtSecret,
+    {
+      algorithm: 'HS256',
+      expiresIn: config.jwtExpiresIn,
+      issuer: config.jwtIssuer,
+      audience: config.jwtAudience,
+    }
+  );
+
+const issueSession = (res, user) => {
+  const token = signSessionToken(user);
+  setSessionCookie(res, token);
+  // Rotate the CSRF token whenever a new authenticated session starts.
+  setCsrfCookie(res);
+  return token;
+};
+
+const handleValidationErrors = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors: errors.array().map((error) => ({
+        field: error.path,
+        message: error.msg,
+      })),
+    });
+  }
+  return next();
+};
+
+const emailRule = body('email')
+  .isString()
+  .withMessage('Email is required')
+  .bail()
+  .trim()
+  .isEmail()
+  .withMessage('Email must be a valid email address')
+  .isLength({ max: 254 })
+  .withMessage('Email cannot exceed 254 characters');
+
+const strongPasswordRule = body('password')
+  .isString()
+  .withMessage('Password is required')
+  .bail()
+  .isLength({ min: 8, max: 128 })
+  .withMessage('Password must be between 8 and 128 characters');
 
 /**
  * @swagger
  * /auth/register:
  *   post:
- *     summary: Register a new user
+ *     summary: Register a new member account
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -32,87 +99,67 @@ router.get("/test", (req, res) => {
  *             type: object
  *             required: [name, email, password]
  *             properties:
- *               name:
- *                 type: string
- *                 example: John Doe
- *               email:
- *                 type: string
- *                 format: email
- *                 example: john@example.com
- *               password:
- *                 type: string
- *                 format: password
- *                 example: secret123
- *               role:
- *                 type: string
- *                 enum: [admin, member]
- *                 description: Ignored — new users are always created as "member". Admin roles cannot be self-assigned at registration.
- *                 example: member
+ *               name: { type: string, example: John Doe }
+ *               email: { type: string, format: email }
+ *               password: { type: string, format: password, minLength: 8 }
  *     responses:
- *       201:
- *         description: User registered successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   type: object
- *                   properties:
- *                     message:
- *                       type: string
- *                       example: User registered successfully
- *       400:
- *         description: User already exists or invalid payload
+ *       201: { description: User registered successfully }
+ *       400: { description: Validation failed or user already exists }
+ *       429: { description: Too many authentication attempts }
  */
-// REGISTER
-router.post("/register", async (req, res, next) => {
-  try {
-    const { name, password } = req.body;
-    const email = getNormalizedEmail(req.body?.email);
+router.post(
+  '/register',
+  authLimiter,
+  [
+    body('name')
+      .isString()
+      .withMessage('Name is required')
+      .bail()
+      .trim()
+      .isLength({ min: 1, max: 100 })
+      .withMessage('Name must be between 1 and 100 characters'),
+    emailRule,
+    strongPasswordRule,
+  ],
+  handleValidationErrors,
+  async (req, res, next) => {
+    try {
+      const { name, password } = req.body;
+      const email = getNormalizedEmail(req.body.email);
 
-    if (!email) {
-      const error = new Error("Invalid email");
-      error.statusCode = 400;
+      const existingUser = await User.findOne({ email: { $eq: email } });
+      if (existingUser) {
+        const error = new Error('User already exists');
+        error.statusCode = 400;
+        return next(error);
+      }
+
+      const hashedPassword = await bcrypt.hash(password, config.bcryptRounds);
+      const user = new User({
+        name: name.trim(),
+        email,
+        password: hashedPassword,
+        // Never allow a role to be self-assigned at registration.
+        role: 'member',
+      });
+
+      await user.save();
+
+      return res.status(201).json({
+        success: true,
+        data: { message: 'User registered successfully' },
+      });
+    } catch (error) {
       return next(error);
     }
-
-    const existingUser = await User.findOne({ email: { $eq: email } });
-
-    if (existingUser) {
-      const error = new Error("User already exists");
-      error.statusCode = 400;
-      return next(error);
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const user = new User({
-      name,
-      email,
-      password: hashedPassword,
-      role: "member",
-    });
-
-    await user.save();
-
-    return res.status(201).json({
-      success: true,
-      data: { message: "User registered successfully" },
-    });
-  } catch (error) {
-    return next(error);
   }
-});
+);
 
 /**
  * @swagger
  * /auth/login:
  *   post:
- *     summary: Log in and receive a JWT token
+ *     summary: Log in and receive an httpOnly session cookie (and optionally a JWT)
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -122,87 +169,68 @@ router.post("/register", async (req, res, next) => {
  *             type: object
  *             required: [email, password]
  *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *                 example: john@example.com
- *               password:
- *                 type: string
- *                 format: password
- *                 example: secret123
+ *               email: { type: string, format: email }
+ *               password: { type: string, format: password }
  *     responses:
- *       200:
- *         description: Login successful, returns JWT token
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/LoginResponse'
- *       400:
- *         description: Invalid email or password
+ *       200: { description: Login successful }
+ *       400: { description: Invalid email or password }
+ *       429: { description: Too many authentication attempts }
  */
-// LOGIN
-router.post("/login", async (req, res, next) => {
-  try {
-    const { password } = req.body;
-    const email = getNormalizedEmail(req.body?.email);
+router.post(
+  '/login',
+  authLimiter,
+  [
+    emailRule,
+    body('password')
+      .isString()
+      .withMessage('Password is required')
+      .bail()
+      .notEmpty()
+      .withMessage('Password is required')
+      .isLength({ max: 128 })
+      .withMessage('Password is too long'),
+  ],
+  handleValidationErrors,
+  async (req, res, next) => {
+    try {
+      const { password } = req.body;
+      const email = getNormalizedEmail(req.body.email);
 
-    if (!email) {
-      const error = new Error("Invalid email or password");
-      error.statusCode = 400;
-      return next(error);
-    }
-
-    const user = await User.findOne({ email: { $eq: email } });
-
-    if (!user) {
-      const error = new Error("Invalid email or password");
-      error.statusCode = 400;
-      return next(error);
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-
-    if (!isMatch) {
-      const error = new Error("Invalid email or password");
-      error.statusCode = 400;
-      return next(error);
-    }
-
-    const token = jwt.sign(
-      {
-        userId: user._id,
-        role: user.role,
-      },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: "1d",
+      const user = await User.findOne({ email: { $eq: email } }).select('+password');
+      if (!user) {
+        const error = new Error('Invalid email or password');
+        error.statusCode = 400;
+        return next(error);
       }
-    );
 
-    return res.json({
-      success: true,
-      data: {
-        message: "Login successful",
-        token,
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          profileComplete: user.profileComplete,
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) {
+        const error = new Error('Invalid email or password');
+        error.statusCode = 400;
+        return next(error);
+      }
+
+      const token = issueSession(res, user);
+
+      return res.json({
+        success: true,
+        data: {
+          message: 'Login successful',
+          ...(config.returnTokenInBody ? { token } : {}),
+          user: publicUser(user),
         },
-      },
-    });
-  } catch (error) {
-    return next(error);
+      });
+    } catch (error) {
+      return next(error);
+    }
   }
-});
+);
 
 /**
  * @swagger
  * /auth/firebase-login:
  *   post:
- *     summary: Verify a Firebase ID token and issue an app JWT
+ *     summary: Verify a Firebase ID token and create an app session
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -212,122 +240,128 @@ router.post("/login", async (req, res, next) => {
  *             type: object
  *             required: [idToken]
  *             properties:
- *               idToken:
- *                 type: string
- *                 description: Firebase ID token from signInWithPopup (Google/GitHub)
+ *               idToken: { type: string }
  *     responses:
- *       200:
- *         description: Login successful, returns an app JWT
- *       400:
- *         description: Missing idToken
- *       401:
- *         description: Invalid or expired Firebase ID token
+ *       200: { description: Login successful }
+ *       400: { description: Missing or invalid idToken }
+ *       401: { description: Invalid or expired Firebase ID token }
+ *       429: { description: Too many authentication attempts }
  */
-// FIREBASE LOGIN (Google / GitHub via Firebase)
-router.post("/firebase-login", async (req, res, next) => {
-  try {
-    const { idToken } = req.body;
+router.post(
+  '/firebase-login',
+  authLimiter,
+  [
+    body('idToken')
+      .isString()
+      .withMessage('idToken is required')
+      .bail()
+      .notEmpty()
+      .withMessage('idToken is required')
+      .isLength({ max: 8192 })
+      .withMessage('idToken is too long'),
+  ],
+  handleValidationErrors,
+  async (req, res, next) => {
+    try {
+      const { idToken } = req.body;
 
-    if (!idToken) {
-      const error = new Error("Missing idToken in request body");
-      error.statusCode = 400;
-      return next(error);
-    }
-
-    if (!getApps().length) {
-      const error = new Error(
-        "Firebase login is not configured on the server. The service account file is missing."
-      );
-      error.statusCode = 500;
-      return next(error);
-    }
-
-    const decodedToken = await getAuth().verifyIdToken(idToken);
-
-    const email = (decodedToken.email || "").toLowerCase();
-    const name = decodedToken.name || email.split("@")[0];
-
-    let user = await User.findOne({ email });
-
-    if (!user) {
-      const randomPassword = crypto.randomBytes(24).toString("hex");
-      const hashedPassword = await bcrypt.hash(randomPassword, 10);
-
-      user = new User({
-        name,
-        email,
-        password: hashedPassword,
-        role: "member",
-      });
-
-      await user.save();
-    }
-
-    const token = jwt.sign(
-      {
-        userId: user._id,
-        role: user.role,
-      },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: "1d",
+      if (!getApps().length) {
+        const error = new Error(
+          'Firebase login is not configured on the server. The service account file is missing.'
+        );
+        error.statusCode = 500;
+        return next(error);
       }
-    );
 
-    return res.json({
-      success: true,
-      data: {
-        message: "Firebase login successful",
-        token,
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          profileComplete: user.profileComplete,
+      const decodedToken = await getAuth().verifyIdToken(idToken);
+      if (!decodedToken.email) {
+        const error = new Error('Firebase account has no verified email address');
+        error.statusCode = 400;
+        return next(error);
+      }
+
+      const email = decodedToken.email.toLowerCase();
+      const name = decodedToken.name || email.split('@')[0];
+
+      let user = await User.findOne({ email: { $eq: email } });
+
+      if (!user) {
+        const randomPassword = crypto.randomBytes(32).toString('hex');
+        const hashedPassword = await bcrypt.hash(randomPassword, config.bcryptRounds);
+
+        user = new User({
+          name,
+          email,
+          password: hashedPassword,
+          role: 'member',
+        });
+
+        await user.save();
+      }
+
+      const token = issueSession(res, user);
+
+      return res.json({
+        success: true,
+        data: {
+          message: 'Firebase login successful',
+          ...(config.returnTokenInBody ? { token } : {}),
+          user: publicUser(user),
         },
-      },
-    });
-  } catch (error) {
-    return next(error);
+      });
+    } catch (error) {
+      if (error?.code?.startsWith?.('auth/')) {
+        error.statusCode = 401;
+        error.message = 'Invalid or expired Firebase ID token';
+      }
+      return next(error);
+    }
   }
+);
+
+/**
+ * @swagger
+ * /auth/csrf:
+ *   get:
+ *     summary: Get a CSRF token for unsafe requests
+ *     tags: [Auth]
+ *     responses:
+ *       200: { description: CSRF token }
+ */
+router.get('/csrf', (req, res) => {
+  const csrfToken = getCsrfCookie(req) || setCsrfCookie(res);
+  return res.json({ success: true, data: { csrfToken } });
+});
+
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: Clear the current session cookie
+ *     tags: [Auth]
+ *     responses:
+ *       200: { description: Logged out }
+ */
+router.post('/logout', (req, res) => {
+  clearSessionCookie(res);
+  return res.json({ success: true, data: { message: 'Logged out successfully' } });
 });
 
 /**
  * @swagger
  * /auth/users:
  *   get:
- *     summary: List all users (for assignee pickers)
- *     description: Requires authentication.
+ *     summary: List users (for assignee pickers)
  *     tags: [Auth]
- *     security:
- *       - bearerAuth: []
+ *     security: [{ bearerAuth: [] }]
  *     responses:
- *       200:
- *         description: List of users
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/User'
- *       401:
- *         description: Not authenticated
+ *       200: { description: List of users }
+ *       401: { description: Not authenticated }
  */
-// LIST USERS (for assignee pickers)
-router.get("/users", protect, async (req, res, next) => {
+router.get('/users', protect, async (req, res, next) => {
   try {
-    const users = await User.find().select("name email role").sort({ name: 1 });
-    return res.json({
-      success: true,
-      data: users,
-    });
+    const users = await User.find().select('name email role profilePicture').sort({ name: 1 });
+    return res.json({ success: true, data: users });
   } catch (error) {
     return next(error);
   }
@@ -338,43 +372,21 @@ router.get("/users", protect, async (req, res, next) => {
  * /auth/profile:
  *   get:
  *     summary: Get the current authenticated user profile
- *     description: Requires authentication.
  *     tags: [Auth]
- *     security:
- *       - bearerAuth: []
+ *     security: [{ bearerAuth: [] }]
  *     responses:
- *       200:
- *         description: Profile of the authenticated user
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   type: object
- *                   properties:
- *                     message:
- *                       type: string
- *                       example: You accessed a protected route!
- *                     user:
- *                       $ref: '#/components/schemas/User'
- *       401:
- *         description: Not authenticated
- *       404:
- *         description: User not found
+ *       200: { description: Profile of the authenticated user }
+ *       401: { description: Not authenticated }
+ *       404: { description: User not found }
  */
-// PROTECTED PROFILE ROUTE
-router.get("/profile", protect, async (req, res, next) => {
+router.get('/profile', protect, async (req, res, next) => {
   try {
     const user = await User.findById(req.user.userId).select(
-      "name email role profilePicture profileComplete jobTitle bio createdAt"
+      'name email role profilePicture profileComplete jobTitle bio createdAt'
     );
 
     if (!user) {
-      const error = new Error("User not found");
+      const error = new Error('User not found');
       error.statusCode = 404;
       return next(error);
     }
@@ -382,90 +394,8 @@ router.get("/profile", protect, async (req, res, next) => {
     return res.json({
       success: true,
       data: {
-        message: "You accessed a protected route!",
+        message: 'You accessed a protected route!',
         user,
-      },
-    });
-  } catch (error) {
-    return next(error);
-  }
-});
-
-// UPDATE PROFILE
-router.put("/profile", protect, async (req, res, next) => {
-  try {
-    const { name, jobTitle, bio, password, newPassword } = req.body;
-    const user = await User.findById(req.user.userId);
-
-    if (!user) {
-      const error = new Error("User not found");
-      error.statusCode = 404;
-      return next(error);
-    }
-
-    if (name) {
-      if (typeof name !== "string" || !name.trim()) {
-        const error = new Error("Name cannot be empty");
-        error.statusCode = 400;
-        return next(error);
-      }
-      user.name = name.trim();
-    }
-
-    if (typeof jobTitle === "string") {
-      if (jobTitle.length > 100) {
-        const error = new Error("Job title cannot exceed 100 characters");
-        error.statusCode = 400;
-        return next(error);
-      }
-      user.jobTitle = jobTitle.trim();
-    }
-
-    if (typeof bio === "string") {
-      if (bio.length > 250) {
-        const error = new Error("Bio cannot exceed 250 characters");
-        error.statusCode = 400;
-        return next(error);
-      }
-      user.bio = bio.trim();
-    }
-
-    if (password || newPassword) {
-      const newPw = newPassword || password;
-      if (typeof newPw !== "string" || newPw.length < 6) {
-        const error = new Error("Password must be at least 6 characters");
-        error.statusCode = 400;
-        return next(error);
-      }
-      if (password && newPassword) {
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-          const error = new Error("Current password is incorrect");
-          error.statusCode = 400;
-          return next(error);
-        }
-      }
-      user.password = await bcrypt.hash(newPw, 10);
-    }
-
-    user.profileComplete = Boolean(user.name && user.profilePicture);
-    await user.save();
-
-    return res.json({
-      success: true,
-      data: {
-        message: "Profile updated successfully",
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          profilePicture: user.profilePicture,
-          profileComplete: user.profileComplete,
-          jobTitle: user.jobTitle,
-          bio: user.bio,
-          createdAt: user.createdAt,
-        },
       },
     });
   } catch (error) {
@@ -475,151 +405,226 @@ router.put("/profile", protect, async (req, res, next) => {
 
 /**
  * @swagger
+ * /auth/profile:
+ *   put:
+ *     summary: Update the current user's profile
+ *     description: Changing the password through this endpoint requires currentPassword and newPassword.
+ *     tags: [Auth]
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200: { description: Profile updated }
+ *       400: { description: Validation failed }
+ *       401: { description: Not authenticated }
+ */
+router.put(
+  '/profile',
+  protect,
+  [
+    body('name')
+      .optional()
+      .isString()
+      .withMessage('Name must be a string')
+      .bail()
+      .trim()
+      .isLength({ min: 1, max: 100 })
+      .withMessage('Name must be between 1 and 100 characters'),
+    body('jobTitle')
+      .optional()
+      .isString()
+      .withMessage('Job title must be a string')
+      .bail()
+      .isLength({ max: 100 })
+      .withMessage('Job title cannot exceed 100 characters'),
+    body('bio')
+      .optional()
+      .isString()
+      .withMessage('Bio must be a string')
+      .bail()
+      .isLength({ max: 250 })
+      .withMessage('Bio cannot exceed 250 characters'),
+    body('currentPassword')
+      .optional()
+      .isString()
+      .withMessage('Current password must be a string')
+      .isLength({ max: 128 })
+      .withMessage('Current password is too long'),
+    body('newPassword')
+      .optional()
+      .isString()
+      .withMessage('New password must be a string')
+      .bail()
+      .isLength({ min: 8, max: 128 })
+      .withMessage('New password must be between 8 and 128 characters'),
+  ],
+  handleValidationErrors,
+  async (req, res, next) => {
+    try {
+      const { name, jobTitle, bio, currentPassword, newPassword } = req.body;
+      const user = await User.findById(req.user.userId).select('+password');
+
+      if (!user) {
+        const error = new Error('User not found');
+        error.statusCode = 404;
+        return next(error);
+      }
+
+      if (name !== undefined) user.name = name.trim();
+      if (jobTitle !== undefined) user.jobTitle = jobTitle.trim();
+      if (bio !== undefined) user.bio = bio.trim();
+
+      if (newPassword !== undefined) {
+        if (!currentPassword) {
+          const error = new Error('Current password is required to set a new password');
+          error.statusCode = 400;
+          return next(error);
+        }
+
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+          const error = new Error('Current password is incorrect');
+          error.statusCode = 400;
+          return next(error);
+        }
+
+        user.password = await bcrypt.hash(newPassword, config.bcryptRounds);
+      }
+
+      user.profileComplete = Boolean(user.name && user.profilePicture);
+      await user.save();
+
+      return res.json({
+        success: true,
+        data: {
+          message: 'Profile updated successfully',
+          user: publicUser(user),
+        },
+      });
+    } catch (error) {
+      return next(error);
+    }
+  }
+);
+
+/**
+ * @swagger
  * /auth/change-password:
  *   put:
  *     summary: Change the current user's password
- *     description: >-
- *       Verifies the current password, checks that the new password and its
- *       confirmation match, then hashes and saves the new password.
- *       Requires authentication.
  *     tags: [Auth]
- *     security:
- *       - bearerAuth: []
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200: { description: Password updated successfully }
+ *       400: { description: Current password incorrect or new password invalid }
+ *       401: { description: Not authenticated }
+ */
+router.put(
+  '/change-password',
+  protect,
+  [
+    body('currentPassword')
+      .isString()
+      .withMessage('Current password is required')
+      .bail()
+      .notEmpty()
+      .withMessage('Current password is required')
+      .isLength({ max: 128 })
+      .withMessage('Current password is too long'),
+    body('newPassword')
+      .isString()
+      .withMessage('New password is required')
+      .bail()
+      .isLength({ min: 8, max: 128 })
+      .withMessage('New password must be between 8 and 128 characters'),
+    body('confirmNewPassword')
+      .isString()
+      .withMessage('Password confirmation is required')
+      .bail()
+      .notEmpty()
+      .withMessage('Password confirmation is required'),
+  ],
+  handleValidationErrors,
+  async (req, res, next) => {
+    try {
+      const { currentPassword, newPassword, confirmNewPassword } = req.body;
+
+      if (newPassword !== confirmNewPassword) {
+        const error = new Error('New password and confirmation do not match');
+        error.statusCode = 400;
+        return next(error);
+      }
+
+      const user = await User.findById(req.user.userId).select('+password');
+      if (!user) {
+        const error = new Error('User not found');
+        error.statusCode = 404;
+        return next(error);
+      }
+
+      const isMatch = await bcrypt.compare(currentPassword, user.password);
+      if (!isMatch) {
+        const error = new Error('Current password is incorrect');
+        error.statusCode = 400;
+        return next(error);
+      }
+
+      user.password = await bcrypt.hash(newPassword, config.bcryptRounds);
+      await user.save();
+
+      // Refresh the session so the cookie remains valid for the new password.
+      issueSession(res, user);
+
+      return res.json({
+        success: true,
+        data: { message: 'Password updated successfully' },
+      });
+    } catch (error) {
+      return next(error);
+    }
+  }
+);
+
+/**
+ * @swagger
+ * /auth/profile/picture:
+ *   post:
+ *     summary: Upload a profile picture (JPEG/PNG/WebP, max 2MB)
+ *     tags: [Auth]
+ *     security: [{ bearerAuth: [] }]
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
- *             required: [currentPassword, newPassword, confirmNewPassword]
  *             properties:
- *               currentPassword:
- *                 type: string
- *                 format: password
- *                 example: OldPass123
- *               newPassword:
- *                 type: string
- *                 format: password
- *                 example: NewPass456
- *               confirmNewPassword:
- *                 type: string
- *                 format: password
- *                 example: NewPass456
+ *               profilePicture: { type: string, format: binary }
  *     responses:
- *       200:
- *         description: Password updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   type: object
- *                   properties:
- *                     message:
- *                       type: string
- *                       example: Password updated successfully
- *       400:
- *         description: Current password is incorrect, new password too short, or passwords do not match
- *       404:
- *         description: User not found
- *       401:
- *         description: Not authenticated
+ *       200: { description: Profile picture updated }
+ *       400: { description: Invalid file }
+ *       429: { description: Upload rate limit reached }
  */
-// CHANGE PASSWORD
-router.put("/change-password", protect, async (req, res, next) => {
-  try {
-    const { currentPassword, newPassword, confirmNewPassword } = req.body;
-
-    if (typeof currentPassword !== "string" || !currentPassword) {
-      const error = new Error("Current password is required");
-      error.statusCode = 400;
-      return next(error);
-    }
-
-    if (typeof newPassword !== "string" || newPassword.length < 6) {
-      const error = new Error("New password must be at least 6 characters");
-      error.statusCode = 400;
-      return next(error);
-    }
-
-    if (newPassword !== confirmNewPassword) {
-      const error = new Error("New password and confirmation do not match");
-      error.statusCode = 400;
-      return next(error);
-    }
-
-    const user = await User.findById(req.user.userId);
-
-    if (!user) {
-      const error = new Error("User not found");
-      error.statusCode = 404;
-      return next(error);
-    }
-
-    const isMatch = await bcrypt.compare(currentPassword, user.password);
-
-    if (!isMatch) {
-      const error = new Error("Current password is incorrect");
-      error.statusCode = 400;
-      return next(error);
-    }
-
-    user.password = await bcrypt.hash(newPassword, 10);
-    await user.save();
-
-    return res.json({
-      success: true,
-      data: {
-        message: "Password updated successfully",
-      },
-    });
-  } catch (error) {
-    return next(error);
-  }
-});
-
-// UPLOAD PROFILE PICTURE
 router.post(
-  "/profile/picture",
+  '/profile/picture',
   protect,
+  uploadLimiter,
+  dailyUploadBudget,
   (req, res, next) => {
-    upload.single("profilePicture")(req, res, (err) => {
-      if (err) {
-        console.error("[profile/picture][multer] error:", {
-          code: err.code,
-          message: err.message,
-          field: err.field,
-          stack: err.stack,
-        });
-        return next(err);
-      }
-      next();
+    upload.single('profilePicture')(req, res, (err) => {
+      if (err) return next(err);
+      return next();
     });
   },
   async (req, res, next) => {
     try {
-      console.log("[profile/picture] request inspection:", {
-        contentType: req.headers["content-type"],
-        body: req.body,
-        file: req.file
-          ? { fieldname: req.file.fieldname, mimetype: req.file.mimetype, size: req.file.size }
-          : null,
-      });
-
       if (!req.file) {
-        const error = new Error("No file uploaded");
+        const error = new Error('No file uploaded');
         error.statusCode = 400;
         return next(error);
       }
 
       const user = await User.findById(req.user.userId);
-
       if (!user) {
-        const error = new Error("User not found");
+        const error = new Error('User not found');
         error.statusCode = 404;
         return next(error);
       }
@@ -631,7 +636,7 @@ router.post(
       return res.json({
         success: true,
         data: {
-          message: "Profile picture updated successfully",
+          message: 'Profile picture updated successfully',
           profilePicture: user.profilePicture,
           profileComplete: user.profileComplete,
         },
@@ -646,47 +651,19 @@ router.post(
  * @swagger
  * /auth/me:
  *   get:
- *     summary: Get the current authenticated user from the database (fresh role lookup)
- *     description: >-
- *       Returns the CURRENT user record from MongoDB (name, email, role).
- *       The role comes from a fresh database lookup every time — NOT from the JWT
- *       payload — so frontends can rely on this as the source of truth for roles.
- *       Requires authentication.
+ *     summary: Get the current authenticated user from the database
  *     tags: [Auth]
- *     security:
- *       - bearerAuth: []
+ *     security: [{ bearerAuth: [] }]
  *     responses:
- *       200:
- *         description: Current user fetched from the database
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   type: object
- *                   properties:
- *                     id:
- *                       type: string
- *                     name:
- *                       type: string
- *                     email:
- *                       type: string
- *                     role:
- *                       type: string
- *                       enum: [admin, member]
- *       401:
- *         description: Not authenticated
- *       404:
- *         description: User not found
+ *       200: { description: Current user }
+ *       401: { description: Not authenticated }
+ *       404: { description: User not found }
  */
-// CURRENT USER (fresh DB lookup — source of truth for the role)
 router.get('/me', protect, async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.userId).select('name email role profilePicture profileComplete jobTitle bio');
+    const user = await User.findById(req.user.userId).select(
+      'name email role profilePicture profileComplete jobTitle bio'
+    );
 
     if (!user) {
       const error = new Error('User not found');

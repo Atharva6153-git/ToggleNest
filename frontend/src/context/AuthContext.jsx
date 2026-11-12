@@ -1,9 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import { TOKEN_KEY } from '../api/axiosInstance'
+import { USER_KEY } from '../api/axiosInstance'
 import { getMe } from '../api/authApi'
 
-const USER_KEY = 'user'
 const REFRESH_INTERVAL_MS = 30000
 
 const AuthContext = createContext(undefined)
@@ -19,15 +18,9 @@ const readStoredUser = () => {
 export function AuthProvider({ children }) {
   const location = useLocation()
   const [user, setUser] = useState(readStoredUser)
-  const [loading, setLoading] = useState(() => Boolean(localStorage.getItem(TOKEN_KEY)))
+  const [loading, setLoading] = useState(true)
 
   const refreshUser = useCallback(async () => {
-    if (!localStorage.getItem(TOKEN_KEY)) {
-      setUser(null)
-      setLoading(false)
-      return null
-    }
-
     try {
       const me = await getMe()
       const freshUser = {
@@ -37,14 +30,18 @@ export function AuthProvider({ children }) {
         role: me.role,
         profilePicture: me.profilePicture,
         profileComplete: Boolean(me.profileComplete),
+        jobTitle: me.jobTitle,
+        bio: me.bio,
       }
       setUser(freshUser)
-      setLoading(false)
       localStorage.setItem(USER_KEY, JSON.stringify(freshUser))
       return freshUser
     } catch {
-      setLoading(false)
+      setUser(null)
+      localStorage.removeItem(USER_KEY)
       return null
+    } finally {
+      setLoading(false)
     }
   }, [])
 
@@ -53,22 +50,18 @@ export function AuthProvider({ children }) {
   }, [refreshUser, location.pathname])
 
   useEffect(() => {
+    if (!user) return undefined
+
     const intervalId = setInterval(() => {
-      if (localStorage.getItem(TOKEN_KEY)) {
-        refreshUser()
-      }
+      refreshUser()
     }, REFRESH_INTERVAL_MS)
 
     return () => clearInterval(intervalId)
-  }, [refreshUser])
+  }, [refreshUser, user])
 
   useEffect(() => {
     const syncFromStorage = (event) => {
-      if (event.key !== USER_KEY && event.key !== TOKEN_KEY) return
-      if (event.key === TOKEN_KEY && !event.newValue) {
-        setUser(null)
-        return
-      }
+      if (event.key !== USER_KEY) return
       setUser(readStoredUser())
     }
 

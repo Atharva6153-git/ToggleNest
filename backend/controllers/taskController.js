@@ -1,22 +1,44 @@
-const mongoose = require('mongoose');
 const Task = require('../models/Task');
 const User = require('../models/User');
 const Project = require('../models/Project');
 const ActivityLog = require('../models/ActivityLog');
 const Notification = require('../models/Notification');
+const {
+  isValidId,
+  authorizeProject,
+  authorizeTask,
+} = require('../utils/accessControl');
 
-const isPlainObject = (value) => (
-  !!value && typeof value === 'object' && !Array.isArray(value)
-);
+const isPlainObject = (value) =>
+  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
-const getLiteralString = (value) => (
-  typeof value === 'string' ? value.trim() : ''
-);
+const getLiteralString = (value) =>
+  typeof value === 'string' ? value.trim() : '';
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+const TASK_FIELDS = [
+  'title',
+  'description',
+  'status',
+  'priority',
+  'dueDate',
+  'assignedTo',
+  'project',
+];
+
+const pickTaskFields = (source, fields) => {
+  const result = {};
+  for (const field of fields) {
+    if (Object.prototype.hasOwnProperty.call(source, field)) {
+      result[field] = source[field];
+    }
+  }
+  return result;
+};
+
 const getRole = async (userId) => {
-  if (!userId) return null;
+  if (!userId || !isValidId(userId)) return null;
   try {
     return await User.findById(userId).select('role name');
   } catch {
@@ -55,7 +77,7 @@ const createNotifications = async (notifications) => {
   try {
     await Notification.insertMany(notifications);
   } catch (notifErr) {
-    console.error('error creating notifications:', notifErr);
+    console.error('error creating notifications:', notifErr.message);
   }
 };
 
@@ -87,9 +109,7 @@ const buildTaskChangeDetails = (previous, updated) => {
     if (previous.description !== updated.description) {
       details.push('description was updated');
     }
-    if (
-      String(previous.assignedTo || '') !== String(updated.assignedTo || '')
-    ) {
+    if (String(previous.assignedTo || '') !== String(updated.assignedTo || '')) {
       details.push('assignee was changed');
     }
   }
@@ -101,7 +121,22 @@ const buildTaskChangeDetails = (previous, updated) => {
 
 exports.createTask = async (req, res, next) => {
   try {
-    const task = new Task(req.body);
+    if (!isPlainObject(req.body)) {
+      const error = new Error('Invalid request body');
+      error.statusCode = 400;
+      return next(error);
+    }
+
+    if (req.body.project) {
+      const { allowed } = await authorizeProject(req.body.project, req);
+      if (!allowed) {
+        const error = new Error('Not authorized to add tasks to this project');
+        error.statusCode = 403;
+        return next(error);
+      }
+    }
+
+    const task = new Task(pickTaskFields(req.body, TASK_FIELDS));
     task.createdBy = req.user?.userId;
     const saved = await task.save();
 
@@ -128,11 +163,9 @@ exports.createTask = async (req, res, next) => {
     }
 
     await createNotifications(notifications);
-    console.log('createTask: notifications created for', notifications.length, 'recipient(s)');
 
     return res.status(201).json({ success: true, data: saved });
   } catch (err) {
-    console.error('createTask error', err);
     return next(err);
   }
 };
@@ -148,23 +181,32 @@ exports.getTasks = async (req, res, next) => {
     const assignedToValue = getLiteralString(assignedTo);
     const searchValue = getLiteralString(search);
 
-    if (!projectValue || !mongoose.isValidObjectId(projectValue)) {
+    if (!projectValue || !isValidId(projectValue)) {
       const error = new Error('Valid project id is required');
       error.statusCode = 400;
+      return next(error);
+    }
+
+    const { allowed } = await authorizeProject(projectValue, req);
+    if (!allowed) {
+      const error = new Error('Not authorized to view tasks in this project');
+      error.statusCode = 403;
       return next(error);
     }
 
     filter.project = { $eq: projectValue };
     if (priorityValue) filter.priority = { $eq: priorityValue };
     if (statusValue) filter.status = { $eq: statusValue };
-    if (assignedToValue) filter.assignedTo = { $eq: assignedToValue };
+    if (assignedToValue && isValidId(assignedToValue)) {
+      filter.assignedTo = { $eq: assignedToValue };
+    }
 
     if (searchValue) {
       filter.title = { $regex: escapeRegex(searchValue), $options: 'i' };
     }
 
     const pageNumber = Math.max(1, Number(page) || 1);
-    const limitNumber = Math.max(1, Number(limit) || 10);
+    const limitNumber = Math.min(100, Math.max(1, Number(limit) || 10));
     const skip = (pageNumber - 1) * limitNumber;
 
     const [tasks, total] = await Promise.all([
@@ -187,7 +229,6 @@ exports.getTasks = async (req, res, next) => {
       },
     });
   } catch (err) {
-    console.error('getTasks error', err);
     return next(err);
   }
 };
@@ -195,15 +236,28 @@ exports.getTasks = async (req, res, next) => {
 exports.getTaskById = async (req, res, next) => {
   try {
     const { id } = req.params;
+    if (!isValidId(id)) {
+      const error = new Error('Invalid task id');
+      error.statusCode = 400;
+      return next(error);
+    }
+
     const task = await Task.findById(id).populate('assignedTo', 'name email');
     if (!task) {
       const error = new Error('Task not found');
       error.statusCode = 404;
       return next(error);
     }
+
+    const { allowed } = await authorizeTask(task, req);
+    if (!allowed) {
+      const error = new Error('Not authorized to view this task');
+      error.statusCode = 403;
+      return next(error);
+    }
+
     return res.json({ success: true, data: task });
   } catch (err) {
-    console.error('getTaskById error', err);
     return next(err);
   }
 };
@@ -211,15 +265,19 @@ exports.getTaskById = async (req, res, next) => {
 exports.updateTask = async (req, res, next) => {
   try {
     const { id } = req.params;
+    if (!isValidId(id)) {
+      const error = new Error('Invalid task id');
+      error.statusCode = 400;
+      return next(error);
+    }
     if (!isPlainObject(req.body)) {
       const error = new Error('Invalid request body');
       error.statusCode = 400;
       return next(error);
     }
 
-    const allowedFields = ['title', 'description', 'status', 'priority', 'dueDate', 'assignedTo', 'project'];
     const updatePayload = {};
-    for (const field of allowedFields) {
+    for (const field of TASK_FIELDS) {
       if (!Object.prototype.hasOwnProperty.call(req.body, field)) continue;
       const value = req.body[field];
       if (value === null || typeof value === 'string') {
@@ -232,23 +290,45 @@ exports.updateTask = async (req, res, next) => {
     }
 
     const previous = await Task.findById(id).select(
-      'title description status priority dueDate assignedTo project'
+      'title description status priority dueDate assignedTo project createdBy'
     );
 
-    const updated = await Task.findOneAndUpdate({ _id: { $eq: id } }, { $set: updatePayload }, {
-      returnDocument: 'after',
-      runValidators: true,
-    });
+    if (!previous) {
+      const error = new Error('Task not found');
+      error.statusCode = 404;
+      return next(error);
+    }
+
+    const { actor, allowed } = await authorizeTask(previous, req);
+    if (!allowed) {
+      const error = new Error('Not authorized to update this task');
+      error.statusCode = 403;
+      return next(error);
+    }
+
+    if (updatePayload.project && String(updatePayload.project) !== String(previous.project || '')) {
+      const projectCheck = await authorizeProject(updatePayload.project, req);
+      if (!projectCheck.allowed) {
+        const error = new Error('Not authorized to move this task to that project');
+        error.statusCode = 403;
+        return next(error);
+      }
+    }
+
+    const updated = await Task.findOneAndUpdate(
+      { _id: { $eq: id } },
+      { $set: updatePayload },
+      { returnDocument: 'after', runValidators: true }
+    );
+
     if (!updated) {
       const error = new Error('Task not found');
       error.statusCode = 404;
       return next(error);
     }
 
-    const actor = await getRole(req.user?.userId);
     const actorName = actor?.name || 'A member';
-
-    const recipientIds = await getProjectRecipients(updated.project, actor?._id);
+    const recipientIds = await getProjectRecipients(updated.project, actor?.id);
     const details = buildTaskChangeDetails(previous, updated);
     const notifications = recipientIds
       .filter((recipient) => !updated.assignedTo || recipient !== String(updated.assignedTo))
@@ -259,12 +339,12 @@ exports.updateTask = async (req, res, next) => {
         relatedTask: updated._id,
       }));
 
-    const previousAssignee = previous?.assignedTo?.toString();
+    const previousAssignee = previous.assignedTo?.toString();
     const newAssigneeId = updated.assignedTo?.toString();
     if (
       newAssigneeId &&
       newAssigneeId !== previousAssignee &&
-      newAssigneeId !== String(actor?._id)
+      newAssigneeId !== String(actor?.id)
     ) {
       notifications.push({
         recipient: newAssigneeId,
@@ -278,7 +358,6 @@ exports.updateTask = async (req, res, next) => {
 
     return res.json({ success: true, data: updated });
   } catch (err) {
-    console.error('updateTask error', err);
     return next(err);
   }
 };
@@ -286,12 +365,27 @@ exports.updateTask = async (req, res, next) => {
 exports.deleteTask = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const deleted = await Task.findByIdAndDelete(id);
-    if (!deleted) {
+    if (!isValidId(id)) {
+      const error = new Error('Invalid task id');
+      error.statusCode = 400;
+      return next(error);
+    }
+
+    const task = await Task.findById(id).select('title project createdBy assignedTo');
+    if (!task) {
       const error = new Error('Task not found');
       error.statusCode = 404;
       return next(error);
     }
+
+    const { allowed } = await authorizeTask(task, req);
+    if (!allowed) {
+      const error = new Error('Not authorized to delete this task');
+      error.statusCode = 403;
+      return next(error);
+    }
+
+    const deleted = await Task.findByIdAndDelete(id);
 
     const actor = await getRole(req.user?.userId);
     const actorName = actor?.name || 'A member';
@@ -308,7 +402,6 @@ exports.deleteTask = async (req, res, next) => {
 
     return res.json({ success: true, data: { message: 'Task deleted' } });
   } catch (err) {
-    console.error('deleteTask error', err);
     return next(err);
   }
 };
@@ -318,14 +411,36 @@ exports.updateTaskStatus = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
-    const allowed = ['To-Do', 'In Progress', 'Done'];
-    if (!status || !allowed.includes(status)) {
-      const error = new Error(`Status must be one of: ${allowed.join(', ')}`);
+
+    if (!isValidId(id)) {
+      const error = new Error('Invalid task id');
       error.statusCode = 400;
       return next(error);
     }
 
-    const previous = await Task.findById(id).select('status title project assignedTo');
+    const allowedStatuses = ['To-Do', 'In Progress', 'Done'];
+    if (!status || !allowedStatuses.includes(status)) {
+      const error = new Error(`Status must be one of: ${allowedStatuses.join(', ')}`);
+      error.statusCode = 400;
+      return next(error);
+    }
+
+    const previous = await Task.findById(id).select(
+      'status title project assignedTo createdBy'
+    );
+
+    if (!previous) {
+      const error = new Error('Task not found');
+      error.statusCode = 404;
+      return next(error);
+    }
+
+    const { actor, allowed } = await authorizeTask(previous, req);
+    if (!allowed) {
+      const error = new Error('Not authorized to update this task');
+      error.statusCode = 403;
+      return next(error);
+    }
 
     const updated = await Task.findOneAndUpdate(
       { _id: { $eq: id } },
@@ -333,14 +448,8 @@ exports.updateTaskStatus = async (req, res, next) => {
       { returnDocument: 'after', runValidators: true }
     );
 
-    if (!updated) {
-      const error = new Error('Task not found');
-      error.statusCode = 404;
-      return next(error);
-    }
-
     const actorId = req.user?.userId || req.user?._id;
-    if (actorId) {
+    if (actorId && isValidId(actorId)) {
       await ActivityLog.create({
         task: id,
         action: `Status changed to ${status}`,
@@ -349,11 +458,9 @@ exports.updateTaskStatus = async (req, res, next) => {
       });
     }
 
-    const actor = await getRole(actorId);
     const actorName = actor?.name || 'A member';
-
-    const recipientIds = await getProjectRecipients(updated.project, actor?._id);
-    const previousStatus = previous?.status;
+    const recipientIds = await getProjectRecipients(updated.project, actor?.id);
+    const previousStatus = previous.status;
 
     if (actor?.role === 'member' && status === 'Done') {
       await createNotifications(
@@ -368,9 +475,10 @@ exports.updateTaskStatus = async (req, res, next) => {
       await createNotifications(
         recipientIds.map((recipient) => ({
           recipient,
-          message: previousStatus && previousStatus !== status
-            ? `${actorName} moved task "${updated.title}" from ${previousStatus} to ${status}`
-            : `${actorName} changed task "${updated.title}" status to ${status}`,
+          message:
+            previousStatus && previousStatus !== status
+              ? `${actorName} moved task "${updated.title}" from ${previousStatus} to ${status}`
+              : `${actorName} changed task "${updated.title}" status to ${status}`,
           type: 'status_changed',
           relatedTask: updated._id,
         }))
@@ -379,7 +487,6 @@ exports.updateTaskStatus = async (req, res, next) => {
 
     return res.json({ success: true, data: updated });
   } catch (err) {
-    console.error('updateTaskStatus error', err);
     return next(err);
   }
 };

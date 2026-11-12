@@ -1,57 +1,38 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, Link, useSearchParams } from 'react-router-dom'
-import { jwtDecode } from 'jwt-decode'
-import axiosInstance, { TOKEN_KEY } from '../api/axiosInstance'
+import { useNavigate, Link } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import PageTransition from '../components/PageTransition'
 
 function OAuthSuccess() {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const { refreshUser } = useAuth()
   const [error, setError] = useState('')
 
   useEffect(() => {
-    const token = searchParams.get('token')
+    let cancelled = false
 
-    if (!token) {
-      setError('OAuth login failed. No token was returned.')
-      return
-    }
+    const completeSignIn = async () => {
+      // Social sign-in now completes through /auth/firebase-login, which sets
+      // an httpOnly session cookie. Never accept a bearer token from the URL.
+      const user = await refreshUser()
+      if (cancelled) return
 
-    localStorage.setItem(TOKEN_KEY, token)
-
-    try {
-      const decoded = jwtDecode(token)
-      localStorage.setItem(
-        'user',
-        JSON.stringify({ id: decoded.userId, role: decoded.role }),
-      )
-    } catch {
-      // ignore malformed token; profile fetch below fills in user info
-    }
-
-    const fetchProfile = async () => {
-      try {
-        const res = await axiosInstance.get('/auth/profile')
-        const u = res.data.data.user
-        localStorage.setItem(
-          'user',
-          JSON.stringify({
-            id: u._id ?? u.id,
-            name: u.name,
-            email: u.email,
-            role: u.role,
-            profilePicture: u.profilePicture,
-            profileComplete: Boolean(u.profileComplete),
-          }),
-        )
-      } catch {
-        // token is still valid; redirect anyway
+      if (!user) {
+        setError('OAuth login failed. Please sign in again.')
+        return
       }
-      navigate('/dashboard', { replace: true })
+
+      navigate(user.profileComplete === false ? '/complete-profile' : '/dashboard', {
+        replace: true,
+      })
     }
 
-    fetchProfile()
-  }, [navigate, searchParams])
+    completeSignIn()
+
+    return () => {
+      cancelled = true
+    }
+  }, [navigate, refreshUser])
 
   if (error) {
     return (

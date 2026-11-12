@@ -48,6 +48,11 @@ function SocialAuthButtons() {
   const [loading, setLoading] = useState(null)
 
   const signInWithFirebase = async (providerName) => {
+    if (!auth) {
+      toast.error('Social sign-in is not configured for this deployment.')
+      return
+    }
+
     setLoading(providerName)
     try {
       const result = await signInWithPopup(auth, firebaseProviders[providerName])
@@ -77,6 +82,8 @@ function SocialAuthButtons() {
     signInWithFirebase(item.name.toLowerCase())
   }
 
+  const disabled = loading !== null || !auth
+
   return (
     <div className="auth-social">
       <div className="auth-social-buttons">
@@ -86,8 +93,8 @@ function SocialAuthButtons() {
             type="button"
             className="auth-social-btn"
             onClick={() => handleClick(item)}
-            disabled={loading !== null}
-            whileTap={loading === null ? { scale: 0.97 } : undefined}
+            disabled={disabled}
+            whileTap={!disabled ? { scale: 0.97 } : undefined}
             transition={{ duration: 0.1 }}
           >
             <item.Icon />

@@ -54,9 +54,14 @@ Access is role-based and enforced live from the database — changing a user's r
 - Status and priority breakdown charts (donut + bar)
 
 **Security**
-- JWT authentication and bcrypt password hashing
-- Rate limiting, mongo-sanitize (NoSQL injection), and hpp (HTTP parameter pollution) protection
-- Centralized error handling and input validation
+- httpOnly, SameSite session cookies with JWT validation (issuer + audience); Bearer tokens remain supported for non-browser API clients
+- Double-submit CSRF protection on all unsafe requests
+- bcrypt password hashing, password-strength rules, and no self-assigned admin roles
+- Strict CORS allow-list, Helmet security headers, HTTPS enforcement in production
+- Rate limiting per IP, daily per-user upload budget, and MIME/size-limited uploads
+- NoSQL-injection protection (key sanitization + `sanitizeFilter`), hpp protection, and input validation/sanitization
+- Object-level authorization and a live database role check on every protected request
+- Centralized error handling that hides stack traces in production
 
 ## Tech Stack
 
@@ -65,17 +70,17 @@ Access is role-based and enforced live from the database — changing a user's r
 | Frontend | React + Vite, Tailwind CSS, Framer Motion |
 | Backend | Node.js + Express |
 | Database | MongoDB + Mongoose (ODM) |
-| Authentication | Firebase Authentication (Google / GitHub OAuth) + JWT |
+| Authentication | Firebase Authentication (Google / GitHub OAuth) + httpOnly cookie sessions |
 | Image Uploads | Cloudinary |
-| API Documentation | Swagger (swagger-jsdoc + swagger-ui-express) |
+| API Documentation | Swagger (swagger-jsdoc + swagger-ui-express), admin-only in production |
 | Charts | Recharts |
-| Security | bcrypt, Helmet, express-rate-limit, express-validator, mongo-sanitize, hpp |
+| Security | bcrypt, Helmet, express-rate-limit, express-validator, hpp, CSRF double-submit, strict CORS |
 
 ## System Architecture
 
 ```mermaid
 flowchart LR
-    Client[React Client<br/>Vite · Tailwind · Framer Motion] <-->|REST + JWT| API[Express API<br/>Routes · Controllers · Models]
+    Client[React Client<br/>Vite · Tailwind · Framer Motion] <-->|REST + httpOnly session cookie| API[Express API<br/>Routes · Controllers · Models]
     API <-->|Mongoose ODM| DB[(MongoDB)]
     Firebase[Firebase Auth<br/>Google / GitHub OAuth] <--> API
     Cloudinary[Cloudinary<br/>Image Uploads] <--> API
@@ -166,6 +171,7 @@ Base URL: `http://localhost:5000/api`
   "role": "member"
 }
 ```
+- Passwords must be 8–128 characters. The `role` field is ignored at registration; new accounts are always created as `member` and promoted by an admin.
 - Example success response:
 ```json
 {
@@ -186,13 +192,14 @@ Base URL: `http://localhost:5000/api`
   "password": "secret123"
 }
 ```
+- On success the API sets the httpOnly `tn_session` cookie (the JWT) and a readable `tn_csrf` cookie. Browser clients authenticate with the session cookie; the `token` field is only returned in the body when `RETURN_TOKEN_IN_BODY=true` (development default, disabled in production).
 - Example success response:
 ```json
 {
   "success": true,
   "data": {
     "message": "Login successful",
-    "token": "jwt_token_here",
+    "token": "jwt_token_here (only when RETURN_TOKEN_IN_BODY=true)",
     "user": {
       "id": "user_id",
       "name": "John Doe",
@@ -206,10 +213,7 @@ Base URL: `http://localhost:5000/api`
 #### Get profile
 - Method: `GET`
 - Endpoint: `/auth/profile`
-- Headers:
-```http
-Authorization: Bearer <token>
-```
+- Auth: the `tn_session` httpOnly cookie (browsers) or `Authorization: Bearer <token>` (API clients)
 - Example success response:
 ```json
 {
@@ -222,6 +226,34 @@ Authorization: Bearer <token>
       "email": "john@example.com",
       "role": "member"
     }
+  }
+}
+```
+
+#### Get a CSRF token
+- Method: `GET`
+- Endpoint: `/auth/csrf`
+- Returns the double-submit token and ensures the readable `tn_csrf` cookie exists. Send it as `X-CSRF-Token` on every `POST`/`PUT`/`PATCH`/`DELETE` request when authenticating with cookies.
+- Example success response:
+```json
+{
+  "success": true,
+  "data": {
+    "csrfToken": "random_hex_token"
+  }
+}
+```
+
+#### Logout
+- Method: `POST`
+- Endpoint: `/auth/logout`
+- Clears the `tn_session` cookie.
+- Example success response:
+```json
+{
+  "success": true,
+  "data": {
+    "message": "Logged out successfully"
   }
 }
 ```
@@ -490,30 +522,48 @@ npm install
 
 ### 2. Set backend environment variables
 
-Create a `.env` file inside the `backend` folder with:
+Copy `backend/.env.example` to `backend/.env`, then fill in your values. The minimum local setup is:
 
 ```env
+NODE_ENV=development
 PORT=5000
 MONGO_URI=mongodb://localhost:27017/togglenest
-JWT_SECRET=your_super_secret_key
-NODE_ENV=development
+JWT_SECRET=your_jwt_secret_here_at_least_32_characters
+# Comma-separated production origin(s) for CORS.
+FRONTEND_URL=http://localhost:5173
+# Firebase Admin SDK: use FIREBASE_SERVICE_ACCOUNT_JSON (hosted) or _PATH (local file)
 FIREBASE_SERVICE_ACCOUNT_PATH=./config/firebase-service-account.json
+# Profile picture uploads
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
 ```
 
-Required variables:
-- `PORT` - port for the backend server
-- `MONGO_URI` - MongoDB connection string
-- `JWT_SECRET` - secret used to sign JWT tokens
-- `FIREBASE_SERVICE_ACCOUNT_PATH` - path to the Firebase Admin SDK service account JSON (see note below)
-- `NODE_ENV` - optional, typically `development` or `production`
+The full list of options (cookie/CSRF, rate limits, upload budget, Swagger, token-in-body) is documented in [`backend/.env.example`](backend/.env.example) and [`SECURITY.md`](SECURITY.md). `MONGO_URI` and `JWT_SECRET` are always required; a production boot fails fast if `JWT_SECRET` is shorter than 32 characters, `FRONTEND_URL` is missing, or `COOKIE_SECURE` is disabled.
 
 > **Firebase service account:** `FIREBASE_SERVICE_ACCOUNT_PATH` points to the Firebase Admin SDK service account JSON used to verify Google/GitHub login tokens. This file is **gitignored** and must be added manually — never commit it. Download it from Firebase Console > Project settings > Service accounts > Generate new private key, then save it where your `.env` entry points (e.g. `backend/config/firebase-service-account.json`).
 
-### 3. Start MongoDB
+### 3. Set frontend environment variables
+
+Copy `frontend/.env.example` to `frontend/.env` and fill in the Firebase Web SDK config:
+
+```env
+VITE_API_URL=http://localhost:5000/api
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+```
+
+These `VITE_*` values are inlined at build time. Never commit `frontend/.env`; it is already ignored by `frontend/.gitignore`.
+
+### 4. Start MongoDB
 
 Make sure MongoDB is running locally on your machine or use a MongoDB connection URI pointing to a remote cluster.
 
-### 4. Run the backend
+### 5. Run the backend
 
 ```bash
 cd backend
@@ -529,7 +579,7 @@ npm start
 
 The backend should run at `http://localhost:5000`.
 
-### 5. Run the frontend
+### 6. Run the frontend
 
 ```bash
 cd frontend
@@ -542,25 +592,27 @@ The frontend should run at `http://localhost:5173`.
 
 Before going live, remember to:
 
-- **Frontend:** set `VITE_API_URL` to your production API URL before building, e.g. `VITE_API_URL=https://api.example.com` or `VITE_API_URL=https://api.example.com/api`. The frontend auto-appends `/api` if it isn't already present (see `frontend/src/api/axiosInstance.js`). Vite inlines env vars at build time, so the production bundle must be built with the correct value. See `frontend/.env.example`.
-- **Backend:** set `PORT`, `MONGO_URI`, `JWT_SECRET`, `NODE_ENV=production`, and the production frontend URL(s) in `FRONTEND_URL` (comma-separated, used for CORS). Provide the Firebase service account via `FIREBASE_SERVICE_ACCOUNT_JSON` (JSON string — preferred for hosted platforms where you can't upload a file) or `FIREBASE_SERVICE_ACCOUNT_PATH` (file path). See `backend/.env.example`.
+- **Frontend:** set `VITE_API_URL` to your production API URL before building, e.g. `VITE_API_URL=https://api.example.com` or `VITE_API_URL=https://api.example.com/api`. The frontend auto-appends `/api` if it isn't already present (see `frontend/src/api/axiosInstance.js`). Vite inlines env vars at build time, so the production bundle must be built with the correct value. Also set the six `VITE_FIREBASE_*` values. See `frontend/.env.example`.
+- **Backend:** set `NODE_ENV=production`, `PORT`, `MONGO_URI`, a random `JWT_SECRET` of 32+ characters, and the production frontend URL(s) in `FRONTEND_URL` (comma-separated, used for CORS). Provide the Firebase service account via `FIREBASE_SERVICE_ACCOUNT_JSON` (JSON string — preferred for hosted platforms where you can't upload a file) or `FIREBASE_SERVICE_ACCOUNT_PATH` (file path). Set `TRUST_PROXY=true` behind a reverse proxy and keep `COOKIE_SECURE=true`. See `backend/.env.example`.
+- **HTTPS + cookies:** the API enforces HTTPS in production and issues `Secure`, `httpOnly` session cookies. If the frontend and API are on different sites, set `COOKIE_SAME_SITE=none` (which requires `COOKIE_SECURE=true`) and make sure both origins are listed in `FRONTEND_URL`.
+- **Secrets:** never commit `.env` files, the Firebase service account JSON, private keys, or certificates. Run `cd backend && npm run security:secrets` before pushing; CI runs the same scan plus backend tests and a frontend production build (`.github/workflows/security.yml`).
+- **Files in git:** this workspace currently has no git history, so the check is enforced by hardened `.gitignore` rules and the secret scanner. If you initialize a repository, run `git status --ignored` and confirm no credential files are tracked.
+- **Spend caps:** code limits upload frequency/volume and authentication attempts. Also set provider-side billing/quota caps for Cloudinary, MongoDB Atlas, Firebase/Google Cloud, email/SMS, and hosting — see `SECURITY.md`.
 - **Firebase Console:** add the production frontend URL under Authentication > Settings > **Authorized domains**, and add it as an **authorized redirect URI** for the Google and GitHub sign-in providers.
 - **GitHub OAuth app:** add the production frontend URL as an **authorized callback / redirect URI** in the GitHub OAuth app settings (Settings > Developer settings > OAuth Apps), in addition to any localhost entries.
 - **JWT secret:** use a long, random, unique value in production — never reuse a local development secret.
+- **API docs:** Swagger is disabled in production by default. Only set `ENABLE_SWAGGER=true` if you need it, and note it is then restricted to authenticated admins.
 
 ## Notes
 
-- All protected routes require a valid JWT token in the `Authorization` header.
+- Protected routes accept the httpOnly `tn_session` cookie (browsers) or `Authorization: Bearer <token>` (trusted API clients). Unsafe cookie-authenticated requests must echo `X-CSRF-Token`.
 - Most route validations enforce task field rules such as required title and valid status/priority values.
-- The API uses pagination for task lists and basic rate limiting for abuse protection.
+- The API uses pagination for task lists, global/auth/upload rate limiting, and a daily per-user upload budget.
+- Set `RETURN_TOKEN_IN_BODY=false` in production (the default) so browsers rely only on the httpOnly cookie.
 
 ## Contributors
 
 - Atharva Jadhav
-- Sarangi Jawale
-- Vedant Sawant
-- Shraddha Das
-- Shreya Karande
 
 ## License
 

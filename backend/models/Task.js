@@ -4,8 +4,18 @@ const { Schema } = mongoose;
 
 const taskSchema = new Schema(
   {
-    title: { type: String, required: true },
-    description: { type: String },
+    title: {
+      type: String,
+      required: [true, 'Task title is required'],
+      trim: true,
+      minlength: [1, 'Task title cannot be empty'],
+      maxlength: [200, 'Task title cannot exceed 200 characters'],
+    },
+    description: {
+      type: String,
+      trim: true,
+      maxlength: [5000, 'Task description cannot exceed 5000 characters'],
+    },
     status: {
       type: String,
       enum: ['To-Do', 'In Progress', 'Done'],
@@ -23,5 +33,8 @@ const taskSchema = new Schema(
   },
   { timestamps: true }
 );
+
+taskSchema.index({ project: 1, createdAt: -1 });
+taskSchema.index({ assignedTo: 1 });
 
 module.exports = mongoose.model('Task', taskSchema);

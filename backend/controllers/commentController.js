@@ -1,24 +1,27 @@
-const mongoose = require('mongoose');
 const Comment = require('../models/Comment');
 const Project = require('../models/Project');
+const { authorizeProject, resolveActor, isValidId } = require('../utils/accessControl');
 
-const { isValidObjectId } = mongoose;
-
-const getLiteralString = (value) => (
-  typeof value === 'string' ? value.trim() : ''
-);
+const getLiteralString = (value) => (typeof value === 'string' ? value.trim() : '');
 
 exports.getComments = async (req, res, next) => {
   try {
     const projectId = getLiteralString(req.query.project);
 
-    if (!projectId || !isValidObjectId(projectId)) {
+    if (!projectId || !isValidId(projectId)) {
       const error = new Error('Valid project id is required');
       error.statusCode = 400;
       return next(error);
     }
 
-    const comments = await Comment.find({ project: projectId })
+    const { allowed } = await authorizeProject(projectId, req);
+    if (!allowed) {
+      const error = new Error('Not authorized to view comments in this project');
+      error.statusCode = 403;
+      return next(error);
+    }
+
+    const comments = await Comment.find({ project: { $eq: projectId } })
       .populate('author', 'name profilePicture')
       .sort({ createdAt: 1 });
 
@@ -28,7 +31,6 @@ exports.getComments = async (req, res, next) => {
       count: comments.length,
     });
   } catch (err) {
-    console.error('getComments error', err);
     return next(err);
   }
 };
@@ -38,7 +40,7 @@ exports.createComment = async (req, res, next) => {
     const projectId = getLiteralString(req.body?.project);
     const rawText = req.body?.text;
 
-    if (!projectId || !isValidObjectId(projectId)) {
+    if (!projectId || !isValidId(projectId)) {
       const error = new Error('Valid project id is required');
       error.statusCode = 400;
       return next(error);
@@ -56,10 +58,17 @@ exports.createComment = async (req, res, next) => {
       return next(error);
     }
 
-    const projectExists = await Project.exists({ _id: projectId });
+    const projectExists = await Project.exists({ _id: { $eq: projectId } });
     if (!projectExists) {
       const error = new Error('Project not found');
       error.statusCode = 404;
+      return next(error);
+    }
+
+    const { allowed } = await authorizeProject(projectId, req);
+    if (!allowed) {
+      const error = new Error('Not authorized to comment on this project');
+      error.statusCode = 403;
       return next(error);
     }
 
@@ -74,7 +83,6 @@ exports.createComment = async (req, res, next) => {
 
     return res.status(201).json({ success: true, data: saved });
   } catch (err) {
-    console.error('createComment error', err);
     return next(err);
   }
 };
@@ -83,7 +91,7 @@ exports.deleteComment = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    if (!id || !isValidObjectId(id)) {
+    if (!id || !isValidId(id)) {
       const error = new Error('Invalid comment id');
       error.statusCode = 400;
       return next(error);
@@ -96,10 +104,10 @@ exports.deleteComment = async (req, res, next) => {
       return next(error);
     }
 
-    const isAuthor = String(comment.author) === String(req.user?.userId);
-    const isAdmin = req.user?.role === 'admin';
+    const actor = await resolveActor(req);
+    const isAuthor = String(comment.author) === actor.id;
 
-    if (!isAuthor && !isAdmin) {
+    if (!isAuthor && !actor.isAdmin) {
       const error = new Error('You can only delete your own comments');
       error.statusCode = 403;
       return next(error);
@@ -109,7 +117,6 @@ exports.deleteComment = async (req, res, next) => {
 
     return res.json({ success: true, data: { message: 'Comment deleted' } });
   } catch (err) {
-    console.error('deleteComment error', err);
     return next(err);
   }
 };

@@ -2,17 +2,25 @@ import { initializeApp } from 'firebase/app'
 import { getAuth, GoogleAuthProvider, GithubAuthProvider } from 'firebase/auth'
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyAK9-ejj1z2lN03oWPVVg9cm8qF01Ju8Nc',
-  authDomain: 'togglenest-5155e.firebaseapp.com',
-  projectId: 'togglenest-5155e',
-  storageBucket: 'togglenest-5155e.firebasestorage.app',
-  messagingSenderId: '258684645473',
-  appId: '1:258684645473:web:fbe01439f2f36a49147a20',
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 }
 
-const app = initializeApp(firebaseConfig)
+const isConfigured = Boolean(firebaseConfig.apiKey && firebaseConfig.projectId)
 
-export const auth = getAuth(app)
+if (!isConfigured) {
+  console.error(
+    'Firebase is not configured. Set VITE_FIREBASE_* variables in frontend/.env (see .env.example).',
+  )
+}
+
+const app = isConfigured ? initializeApp(firebaseConfig) : null
+
+export const auth = app ? getAuth(app) : null
 export const googleProvider = new GoogleAuthProvider()
 export const githubProvider = new GithubAuthProvider()
 
