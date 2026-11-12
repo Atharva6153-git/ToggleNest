@@ -75,7 +75,17 @@ app.use(
             frameAncestors: ["'none'"],
           },
         }
-      : false,
+      : {
+          useDefaults: true,
+          directives: {
+            "default-src": ["'self'"],
+            "base-uri": ["'self'"],
+            "form-action": ["'self'"],
+            "frame-ancestors": ["'none'"],
+            "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+            "style-src": ["'self'", "'unsafe-inline'"],
+          },
+        },
     crossOriginEmbedderPolicy: false,
     referrerPolicy: { policy: 'no-referrer' },
     hsts: config.isProduction
