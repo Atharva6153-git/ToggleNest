@@ -3,7 +3,7 @@ import { logout } from '../api/authApi'
 import NotificationBell from './NotificationBell'
 import ThemeToggleButton from './ThemeToggleButton'
 import { useAuth } from '../context/AuthContext'
-import { LayoutDashboard, FolderKanban, Plus } from 'lucide-react'
+import { LayoutDashboard, FolderKanban, Plus, UsersRound } from 'lucide-react'
 
 function Layout({ children }) {
   const navigate = useNavigate()
@@ -17,6 +17,7 @@ function Layout({ children }) {
   const isProjectsActive =
     pathname.startsWith('/projects') && pathname !== '/projects/create'
   const isCreateActive = pathname === '/projects/create'
+  const isManageUsersActive = pathname === '/admin/users'
 
   const handleLogout = () => {
     logout()
@@ -44,13 +45,22 @@ function Layout({ children }) {
             Projects
           </button>
           {isAdmin && (
-            <button
-              className={isCreateActive ? 'active' : ''}
-              onClick={() => navigate('/projects/create')}
-            >
-              <Plus size={18} />
-              Create Project
-            </button>
+            <>
+              <button
+                className={isCreateActive ? 'active' : ''}
+                onClick={() => navigate('/projects/create')}
+              >
+                <Plus size={18} />
+                Create Project
+              </button>
+              <button
+                className={isManageUsersActive ? 'active' : ''}
+                onClick={() => navigate('/admin/users')}
+              >
+                <UsersRound size={18} />
+                Manage Users
+              </button>
+            </>
           )}
         </nav>
 

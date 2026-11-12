@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -7,6 +8,7 @@ const { getAuth, getApps } = require('../config/firebaseAdmin');
 const { config } = require('../config/env');
 const User = require('../models/User');
 const protect = require('../middleware/authMiddleware');
+const roleMiddleware = require('../middleware/roleMiddleware');
 const upload = require('../config/cloudinary');
 const { authLimiter, uploadLimiter, dailyUploadBudget } = require('../middleware/rateLimiters');
 const {
@@ -352,6 +354,7 @@ router.post('/logout', (req, res) => {
  * /auth/users:
  *   get:
  *     summary: List users (for assignee pickers)
+ *     description: Returns authenticated users for assignee pickers and user management. The response includes role and createdAt for admin clients.
  *     tags: [Auth]
  *     security: [{ bearerAuth: [] }]
  *     responses:
@@ -360,12 +363,100 @@ router.post('/logout', (req, res) => {
  */
 router.get('/users', protect, async (req, res, next) => {
   try {
-    const users = await User.find().select('name email role profilePicture').sort({ name: 1 });
+    const users = await User.find()
+      .select('name email role profilePicture createdAt')
+      .sort({ name: 1 });
     return res.json({ success: true, data: users });
   } catch (error) {
     return next(error);
   }
 });
+
+/**
+ * @swagger
+ * /auth/users/{id}/role:
+ *   patch:
+ *     summary: Change a user's role
+ *     tags: [Auth]
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [role]
+ *             properties:
+ *               role: { type: string, enum: [admin, member] }
+ *     responses:
+ *       200: { description: User role updated }
+ *       400: { description: Invalid role, user id, or last admin protection }
+ *       401: { description: Not authenticated }
+ *       403: { description: Admin role required }
+ *       404: { description: User not found }
+ */
+router.patch(
+  '/users/:id/role',
+  protect,
+  roleMiddleware('admin'),
+  body('role')
+    .isString()
+    .withMessage('Role is required')
+    .bail()
+    .isIn(['admin', 'member'])
+    .withMessage('Role must be admin or member'),
+  handleValidationErrors,
+  async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const { role } = req.body;
+
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid user id',
+        });
+      }
+
+      const user = await User.findById(id).select(
+        'name email role profilePicture createdAt'
+      );
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found',
+        });
+      }
+
+      if (user.role === 'admin' && role === 'member') {
+        const remainingAdmins = await User.countDocuments({
+          role: 'admin',
+          _id: { $ne: user._id },
+        });
+
+        if (remainingAdmins === 0) {
+          return res.status(400).json({
+            success: false,
+            message: 'Cannot demote the last remaining admin',
+          });
+        }
+      }
+
+      user.role = role;
+      await user.save();
+
+      return res.json({ success: true, data: user });
+    } catch (error) {
+      return next(error);
+    }
+  }
+);
 
 /**
  * @swagger

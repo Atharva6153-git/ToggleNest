@@ -14,6 +14,7 @@ import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
 import CompleteProfile from './pages/CompleteProfile'
 import ProjectDetail from './pages/ProjectDetail'
+import AdminUsers from './pages/AdminUsers'
 import RequireAuth from './components/RequireAuth'
 import HomeRoute from './components/HomeRoute'
 import AdminRoute from './components/AdminRoute'
@@ -85,6 +86,16 @@ function App() {
           <RequireAuth>
             <AdminRoute>
               <EditProject />
+            </AdminRoute>
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/admin/users"
+        element={
+          <RequireAuth>
+            <AdminRoute>
+              <AdminUsers />
             </AdminRoute>
           </RequireAuth>
         }

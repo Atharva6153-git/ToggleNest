@@ -5,6 +5,7 @@ function ConfirmDialog({
   title,
   message,
   confirmLabel = 'Delete',
+  submittingLabel = 'Deleting...',
   cancelLabel = 'Cancel',
   isSubmitting = false,
   onConfirm,
@@ -58,7 +59,7 @@ function ConfirmDialog({
                 onClick={onConfirm}
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Deleting...' : confirmLabel}
+                {isSubmitting ? submittingLabel : confirmLabel}
               </button>
             </div>
           </motion.div>
