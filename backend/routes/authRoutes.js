@@ -458,6 +458,17 @@ router.patch(
       }
 
       if (user.role === 'admin' && role === 'member') {
+        const originalAdmin = await User.findOne({ role: 'admin' })
+          .sort({ createdAt: 1 })
+          .select('_id');
+
+        if (originalAdmin && originalAdmin._id.equals(user._id)) {
+          return res.status(403).json({
+            success: false,
+            message: 'The original admin cannot be demoted',
+          });
+        }
+
         const adminCount = await User.countDocuments({ role: 'admin' });
 
         if (adminCount <= 1) {
