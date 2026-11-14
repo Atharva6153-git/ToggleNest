@@ -57,6 +57,11 @@ export const getUsers = async () => {
   return response.data.data
 }
 
+export const getAssigneeUsers = async () => {
+  const response = await axiosInstance.get('/auth/users/assignees')
+  return response.data.data
+}
+
 export const updateUserRole = async (userId, role) => {
   const response = await axiosInstance.patch(`/auth/users/${userId}/role`, { role })
   return response.data.data

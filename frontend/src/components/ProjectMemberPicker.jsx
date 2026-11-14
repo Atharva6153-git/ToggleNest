@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getUsers } from '../api/authApi'
+import { getAssigneeUsers } from '../api/authApi'
 import SkeletonCard from './SkeletonCard'
 
 function ProjectMemberPicker({ value = [], onChange }) {
@@ -11,7 +11,7 @@ function ProjectMemberPicker({ value = [], onChange }) {
 
     const loadUsers = async () => {
       try {
-        const data = await getUsers()
+        const data = await getAssigneeUsers()
         if (mounted) setUsers(data)
       } catch {
         if (mounted) setUsers([])

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getUsers } from '../../api/authApi'
+import { getAssigneeUsers } from '../../api/authApi'
 
 function UserSelector({ value, onChange, label = 'Assignee' }) {
   const [users, setUsers] = useState([])
@@ -10,7 +10,7 @@ function UserSelector({ value, onChange, label = 'Assignee' }) {
 
     const loadUsers = async () => {
       try {
-        const data = await getUsers()
+        const data = await getAssigneeUsers()
         if (isMounted) {
           setUsers(data)
         }
