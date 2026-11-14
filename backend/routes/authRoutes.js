@@ -458,12 +458,9 @@ router.patch(
       }
 
       if (user.role === 'admin' && role === 'member') {
-        const remainingAdmins = await User.countDocuments({
-          role: 'admin',
-          _id: { $ne: user._id },
-        });
+        const adminCount = await User.countDocuments({ role: 'admin' });
 
-        if (remainingAdmins === 0) {
+        if (adminCount <= 1) {
           return res.status(400).json({
             success: false,
             message: 'Cannot demote the last remaining admin',
