@@ -458,6 +458,15 @@ router.patch(
       }
 
       if (user.role === 'admin' && role === 'member') {
+        const adminCount = await User.countDocuments({ role: 'admin' });
+
+        if (adminCount <= 1) {
+          return res.status(400).json({
+            success: false,
+            message: 'Cannot demote the last remaining admin',
+          });
+        }
+
         const originalAdmin = await User.findOne({ role: 'admin' })
           .sort({ createdAt: 1 })
           .select('_id');
@@ -466,15 +475,6 @@ router.patch(
           return res.status(403).json({
             success: false,
             message: 'The original admin cannot be demoted',
-          });
-        }
-
-        const adminCount = await User.countDocuments({ role: 'admin' });
-
-        if (adminCount <= 1) {
-          return res.status(400).json({
-            success: false,
-            message: 'Cannot demote the last remaining admin',
           });
         }
       }
