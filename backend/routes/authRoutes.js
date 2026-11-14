@@ -353,18 +353,41 @@ router.post('/logout', (req, res) => {
  * @swagger
  * /auth/users:
  *   get:
- *     summary: List users (for assignee pickers)
- *     description: Returns authenticated users for assignee pickers and user management. The response includes role and createdAt for admin clients.
+ *     summary: List users for administration
+ *     description: Returns all users, including role and joined date, for administrators.
+ *     tags: [Auth]
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200: { description: List of users }
+ *       401: { description: Not authenticated }
+ *       403: { description: Admin role required }
+ */
+router.get('/users', protect, roleMiddleware('admin'), async (req, res, next) => {
+  try {
+    const users = await User.find()
+      .select('name email role profilePicture createdAt')
+      .sort({ name: 1 });
+    return res.json({ success: true, data: users });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+/**
+ * @swagger
+ * /auth/users/assignees:
+ *   get:
+ *     summary: List users for assignee pickers
  *     tags: [Auth]
  *     security: [{ bearerAuth: [] }]
  *     responses:
  *       200: { description: List of users }
  *       401: { description: Not authenticated }
  */
-router.get('/users', protect, async (req, res, next) => {
+router.get('/users/assignees', protect, async (req, res, next) => {
   try {
     const users = await User.find()
-      .select('name email role profilePicture createdAt')
+      .select('name email role profilePicture')
       .sort({ name: 1 });
     return res.json({ success: true, data: users });
   } catch (error) {

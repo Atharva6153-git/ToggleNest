@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getUsers } from '../api/authApi'
+import { getAssigneeUsers } from '../api/authApi'
 
 const PRIORITY_OPTIONS = ['Low', 'Medium', 'High']
 const STATUS_OPTIONS = ['To-Do', 'In Progress', 'Done']
@@ -23,7 +23,7 @@ function FiltersBar({
 
     const loadUsers = async () => {
       try {
-        const data = await getUsers()
+        const data = await getAssigneeUsers()
         if (isMounted) {
           setUsers(data)
         }
